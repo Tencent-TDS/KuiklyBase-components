@@ -1,8 +1,7 @@
 [versions]
 
-knoi = "0.2.29"
-agp = "8.1.0"
-kotlin = "2.0.21-mini-005"
+knoi = "0.0.1"
+kotlin = "2.0.21-KBA-003"
 junit = "4.13.2"
 runner = "1.0.2"
 espresso-core = "3.0.2"
@@ -11,10 +10,9 @@ appcompat = "1.7.0"
 material = "1.12.0"
 activity = "1.8.0"
 constraintlayout = "2.1.4"
-kotlin-stdlib-platform-ext = "0.1.0"
 
 [libraries]
-knoi-annotation = { group = "com.tencent.tmm", name = "knoi-annotation", version.ref = "knoi" }
+knoi-annotation = { group = "com.tencent.kuiklybase", name = "knoi-annotation", version.ref = "knoi" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 runner = { group = "com.android.support.test", name = "runner", version.ref = "runner" }
 espresso-core = { group = "com.android.support.test.espresso", name = "espresso-core", version.ref = "espresso-core" }
@@ -23,10 +21,8 @@ appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "a
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
-kotlin-stdlib-platform-ext = { module = "com.tencent.tmm:kotlin-stdlib-platform-ext", version.ref = "kotlin-stdlib-platform-ext" }
 
 [plugins]
-androidApplication = { id = "com.android.application", version.ref = "agp" }
 jetbrainsKotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 
 [bundles]

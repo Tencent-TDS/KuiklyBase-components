@@ -26,8 +26,8 @@ open class TestServiceB : TestServiceBApi {
     // 传入 Int 返回 Int
     @OptIn(NativeRuntimeApi::class)
     override fun methodWithIntReturnInt(a: Int): Int {
-        info("qizhengchenjsvalue methodWithIntReturnInt call info")
-        logImpl?.callMethod<Unit>("info", "qizhengchen methodWithIntReturnInt logimpl")
+        info("knoi-samplejsvalue methodWithIntReturnInt call info")
+        logImpl?.callMethod<Unit>("info", "knoi-sample methodWithIntReturnInt logimpl")
         return a + 1
     }
 
@@ -90,7 +90,7 @@ open class TestServiceB : TestServiceBApi {
     override fun methodWithMapReturnMap(a: Map<String, Any?>): Map<String, Any?> {
         val map = a.toMutableMap()
         map.forEach {
-            info("qizhengchen map ${it.key} ${it.value}")
+            info("knoi-sample map ${it.key} ${it.value}")
         }
         map["kmm"] = "push in KMM"
         return a.toMap()
@@ -116,7 +116,7 @@ open class TestServiceB : TestServiceBApi {
     // 传入二进制数据返回二进制数据
     @OptIn(ExperimentalForeignApi::class)
     override fun methodWithArrayBufferReturnArrayBuffer(buffer: ArrayBuffer): ArrayBuffer {
-        info("qizhengchen methodWithArrayBufferReturnArrayBuffer")
+        info("knoi-sample methodWithArrayBufferReturnArrayBuffer")
         val bufferArray = buffer.getData<uint8_tVar>()
         bufferArray?.set(4, 4u)
         bufferArray?.set(5, 5u)
@@ -139,11 +139,11 @@ open class TestServiceB : TestServiceBApi {
     }
 
     override fun methodWithDefaultValueInSubType(a: Int, b: String) {
-        info("qizhengchen methodWithDefaultValue $a $b")
+        info("knoi-sample methodWithDefaultValue $a $b")
     }
 
     fun methodWithDefaultValue(a: Int = 42, b: String = "default value") {
-        info("qizhengchen methodWithDefaultValue $a $b")
+        info("knoi-sample methodWithDefaultValue $a $b")
     }
 
     // 隐藏方法，不生成到 d.ts
@@ -159,11 +159,11 @@ open class TestServiceB : TestServiceBApi {
 
     fun testJSValueRef(jsValue: JSValue) {
         if (status) {
-            info("qizhengchen testJSValueRef obtain JSValue")
+            info("knoi-sample testJSValueRef obtain JSValue")
             logImpl = jsValue["impl"]!!
             status = false
         } else {
-            info("qizhengchen testJSValueRef release JSValue")
+            info("knoi-sample testJSValueRef release JSValue")
             logImpl = null
             status = true
         }
@@ -176,18 +176,18 @@ open class TestServiceB : TestServiceBApi {
 //
 //    init {
 ////        createCleaner(resource) {
-////            info("qizhengchen test clean. clean resource construct ${it.hashCode()}")
+////            info("knoi-sample test clean. clean resource construct ${it.hashCode()}")
 ////        }
 ////        createCleaner(this) {
-////            info("qizhengchen test clean. clean this construct ${it.hashCode()}")
+////            info("knoi-sample test clean. clean this construct ${it.hashCode()}")
 ////        }
 //    }
 //
 //    private val clean = createCleaner(resource) {
-//        info("qizhengchen test clean. clean resource ${it.hashCode()}")
+//        info("knoi-sample test clean. clean resource ${it.hashCode()}")
 //    }
 ////    private val clean1 = createCleaner(this) {
-////        info("qizhengchen test clean. clean this ${it.hashCode()}")
+////        info("knoi-sample test clean. clean this ${it.hashCode()}")
 ////    }.freeze()
 //}
 //

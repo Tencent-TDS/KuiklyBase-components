@@ -23,12 +23,12 @@ Kotlin Native & ArkTS 互相调用能力，无需写 C/C++ 桥接代码。
    plugins {
      id("com.google.devtools.ksp") version "2.0.21-1.0.28" apply false 
      // knoi 最新版本见 changelog
-     id("com.tencent.tmm.knoi.plugin") version("0.2.22") apply false
+     id("com.tencent.kuiklybase.knoi.plugin") version("0.0.2") apply false
    }
 
   // 在期望使用 knoi 模块的 gradle 文件添加
   plugins {
-    id("com.tencent.tmm.knoi.plugin")
+    id("com.tencent.kuiklybase.knoi.plugin")
   }
   
 
@@ -43,8 +43,6 @@ Kotlin Native & ArkTS 互相调用能力，无需写 C/C++ 桥接代码。
 - ArkTS 接入
 
 ```bash
-// 设置私服 （在终端中执行）
-ohpm config set registry http://ohpm-beta.mirrors.woa.com/repos/ohpm
 
 // 添加依赖 （在 entry/oh-package.json5，非根目录的oh-package.json5）
 // ArkTS 侧动态版本有缓存问题，生效慢，如有新增 API 无法调用，可以直接使用最新版本

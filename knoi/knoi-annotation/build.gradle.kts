@@ -15,7 +15,6 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
-    androidNativeArm64()
     // 以上平台无需实现，仅仅通过编译
 
     jvm {

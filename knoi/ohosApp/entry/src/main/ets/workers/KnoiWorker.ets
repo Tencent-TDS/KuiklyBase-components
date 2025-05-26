@@ -11,7 +11,7 @@ const workerPort: ThreadWorkerGlobalScope = worker.workerPort;
  * @param e message data
  */
 workerPort.onmessage = (e: MessageEvents) => {
-  console.log("qizhengchen onmessage")
+  console.log("knoi-sample onmessage")
   registerServiceProvider("TestServiceAInWorker", true, TestServiceAInWorkerImpl)
 }
 

@@ -49,7 +49,7 @@ fun getKNOIAnnotationDependencies(extension: KnoiExtension, project: Project): A
     return if (extension.debug) {
         project.project(":knoi-annotation")
     } else {
-        "com.tencent.tmm:knoi-annotation:${getKNOIVersion(extension)}"
+        "com.tencent.kuiklybase:knoi-annotation:${getKNOIVersion(extension)}"
     }
 }
 
@@ -57,7 +57,7 @@ fun getKNOIProcessorDependencies(extension: KnoiExtension, project: Project): An
     return if (extension.debug) {
         project.project(":knoi-processor")
     } else {
-        "com.tencent.tmm:knoi-processor:${getKNOIVersion(extension)}"
+        "com.tencent.kuiklybase:knoi-processor:${getKNOIVersion(extension)}"
     }
 }
 
@@ -65,14 +65,14 @@ fun getKNOIDependencies(extension: KnoiExtension, project: Project): Any {
     return if (extension.debug) {
         project.project(":knoi")
     } else {
-        "com.tencent.tmm:knoi:${getKNOIVersion(extension)}"
+        "com.tencent.kuiklybase:knoi:${getKNOIVersion(extension)}"
     }
 }
 
 fun getKNOIVersion(extension: KnoiExtension): String {
     var version = extension.javaClass.classLoader.getResource("version.txt")?.readText()
     if (version == null) {
-        version = "0.0.28"
+        version = "0.0.1"
     }
     println("inject knoi version $version")
     return version

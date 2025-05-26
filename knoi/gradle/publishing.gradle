@@ -1,0 +1,35 @@
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+ext {
+}
+ext["signing.keyId"] = ''
+ext["signing.password"] = ''
+ext["signing.secretKeyRingFile"] = ''
+File secretPropsFile = project.rootProject.file('local.properties')
+if (secretPropsFile.exists()) {
+    println "Found secret props file, loading props"
+    Properties p = new Properties()
+    p.load(new FileInputStream(secretPropsFile))
+    p.each { name, value ->
+        ext[name] = value
+    }
+} else {
+    println "No props file, loading env vars"
+}
+
+publishing {
+    repositories {
+        PublishingKt.configureMavenPublication(delegate, project)
+    }
+
+    publications.all {
+        PublishingKt.configureMavenCentralMetadata(pom, project)
+        PublishingKt.signPublicationIfKeyPresent(project, it)
+    }
+
+    tasks.withType(AbstractPublishToMaven).configureEach {
+        dependsOn(tasks.withType(Sign))
+    }
+
+}

@@ -40,7 +40,7 @@ fun testVoidReturnString(): String {
 
 @KNExport
 fun testVoidReturnVoid() {
-    OH_LOG_Print(LOG_APP, LOG_INFO, 65416u, "qizhengchen", "testVoidReturnVoid");
+    OH_LOG_Print(LOG_APP, LOG_INFO, 65416u, "knoi-sample", "testVoidReturnVoid");
 }
 
 @KNExport
@@ -65,14 +65,14 @@ fun testDoubleReturnDouble(result: Double): Double {
 
 @KNExport
 fun testJSValueReturnJSValue(value: JSValue): JSValue {
-    info("qizhengchen testJSValueReturnJSValue")
+    info("testJSValueReturnJSValue")
     return value
 }
 
 //不支持的类型测试
 //@KNExport
 //fun testKClass(value: KClass<Any>): JSValue? {
-//    info("qizhengchen testJSValueReturnJSValue")
+//    info("testJSValueReturnJSValue")
 //    return null
 //}
 
@@ -94,41 +94,41 @@ fun testMapReturnMap(result: HashMap<String, Any?>): Map<String, Any?> {
 
 @KNExport
 fun testJSCallbackReturnVoid(function: (args: Array<out Any?>) -> Any) {
-    info("qizhengchen testJSCallbackReturnVoid")
+    info("knoi-sample testJSCallbackReturnVoid")
     function.invoke(arrayOf("result callback for kmm"))
 }
 
 @KNExport
 fun testJSCallbackReturnString(function: (args: Array<out Any?>) -> Any) {
-    info("qizhengchen testJSCallbackReturnString")
+    info("knoi-sample testJSCallbackReturnString")
     val resultFromJS = function.invoke(arrayOf("result callback for kmm"))
-    info("qizhengchen testJSCallbackReturnString result = $resultFromJS")
+    info("knoi-sample testJSCallbackReturnString result = $resultFromJS")
 }
 
 @KNExport
 fun testJSCallbackReturnMap(function: (args: Array<out Any?>) -> Any) {
-    info("qizhengchen testJSCallbackReturnMap")
+    info("knoi-sample testJSCallbackReturnMap")
     val map = mapOf<String, Any?>("name" to "KMM", "arg" to 42)
     val resultFromJS = function.invoke(arrayOf(map))
-    info("qizhengchen testJSCallbackReturnMap result = $resultFromJS")
+    info("knoi-sample testJSCallbackReturnMap result = $resultFromJS")
 }
 
 @KNExport
 fun testJSCallbackReturnJSCallback(function: (args: Array<out Any?>) -> Any): (args: Array<JSValue?>) -> Any? {
-    info("qizhengchen testJSCallbackReturnJSCallback")
+    info("knoi-sample testJSCallbackReturnJSCallback")
     val map = mapOf<String, Any?>("name" to "KMM", "arg" to 42)
     val resultFromJS = function.invoke(arrayOf(map))
-    info("qizhengchen testJSCallbackReturnJSCallback result = $resultFromJS")
+    info("knoi-sample testJSCallbackReturnJSCallback result = $resultFromJS")
     val funcWrapper: (args: Array<JSValue?>) -> Any? = { args ->
         val result = args[0]?.toKString()
-        info("qizhengchen testJSCallbackReturnJSCallback funcWrapper $result ")
+        info("knoi-sample testJSCallbackReturnJSCallback funcWrapper $result ")
     }
     return funcWrapper
 }
 
 @KNExport
 fun testListReturnList(array: List<Any?>): List<Any?> {
-    info("qizhengchen testListReturnList $array")
+    info("knoi-sample testListReturnList $array")
     val kmmList = array.toMutableList()
     kmmList.add("LastAddInKMM")
     return kmmList
@@ -136,7 +136,7 @@ fun testListReturnList(array: List<Any?>): List<Any?> {
 
 @KNExport
 fun testArrayReturnArray(array: Array<Any?>): Array<Any?> {
-    info("qizhengchen testArrayReturnArray $array")
+    info("knoi-sample testArrayReturnArray $array")
     val kmmList = array.toMutableList()
     kmmList.add("LastAddInKMM")
     return kmmList.toTypedArray()
@@ -145,7 +145,7 @@ fun testArrayReturnArray(array: Array<Any?>): Array<Any?> {
 @KNExport
 @OptIn(ExperimentalForeignApi::class)
 fun testArrayBufferReturnArrayBuffer(buffer: ArrayBuffer): ArrayBuffer {
-    info("qizhengchen testArrayBufferReturnArrayBuffer")
+    info("knoi-sample testArrayBufferReturnArrayBuffer")
     val bufferArray = buffer.getData<uint8_tVar>()
     bufferArray?.set(4, 4u)
     bufferArray?.set(5, 5u)
@@ -157,7 +157,7 @@ fun testArrayBufferReturnArrayBuffer(buffer: ArrayBuffer): ArrayBuffer {
 @KNExport
 @OptIn(ExperimentalForeignApi::class)
 fun testVoidReturnArrayBufferInMap(): Map<String, *> {
-    info("qizhengchen testVoidReturnArrayBufferInMap")
+    info("knoi-sample testVoidReturnArrayBufferInMap")
     val int32Buffer = nativeHeap.allocArray<int32_tVar>(8)
     int32Buffer[0] = 17
     int32Buffer[1] = 18

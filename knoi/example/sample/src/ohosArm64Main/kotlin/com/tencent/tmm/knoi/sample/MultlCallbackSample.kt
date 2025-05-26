@@ -10,7 +10,7 @@ open class MultiCallbackSample {
 
     private var listener: MultiCallbackListener? = null
     fun init(value: JSValue) {
-        info("qizhengchen MultiCallbackSample init")
+        info("knoi-sample MultiCallbackSample init")
         listener = value.asMultiCallbackListener()
     }
 

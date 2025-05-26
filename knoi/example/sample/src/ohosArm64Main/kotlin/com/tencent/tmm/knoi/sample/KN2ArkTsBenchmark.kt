@@ -105,7 +105,7 @@ fun testService() {
     if (int32Result != null) {
         val buffer = int32Result.getData<int32_tVar>()
         info(
-            "qizhengchen TestServiceA methodWithArrayBufferReturnArrayBuffer ${buffer?.get(4)} ${buffer?.get(5)} ${
+            "knoi-sample TestServiceA methodWithArrayBufferReturnArrayBuffer ${buffer?.get(4)} ${buffer?.get(5)} ${
                 buffer?.get(
                     6
                 )
@@ -113,7 +113,7 @@ fun testService() {
         )
     } else {
         info(
-            "qizhengchen TestServiceA methodWithArrayBufferReturnArrayBuffer return null"
+            "knoi-sample TestServiceA methodWithArrayBufferReturnArrayBuffer return null"
         )
     }
 
@@ -179,11 +179,11 @@ fun testService() {
 
 @KNExport
 fun testJSValue() {
-    info("qizhengchen testJSValue")
+    info("knoi-sample testJSValue")
     val global = JSValue.global(tid = mainTid)
     val map = mapOf<String, Any?>("name" to "KMM", "arg" to 42)
     val result = global["JSON"]?.callMethod<String>("stringify", map)
-    info("qizhengchen stringify result = $result")
+    info("knoi-sample stringify result = $result")
 }
 
 @KNExport
@@ -191,16 +191,16 @@ fun testCoroutines() {
     val ioScope = CoroutineScope(Dispatchers.IO)
     val mainScope = CoroutineScope(Dispatchers.Main)
     ioScope.launch {
-        info("qizhengchen io dispatcher.")
+        info("knoi-sample io dispatcher.")
         mainScope.launch {
-            info("qizhengchen main dispatcher.")
+            info("knoi-sample main dispatcher.")
         }
     }
 
     ioScope.launch {
-        info("qizhengchen io dispatcher delay 1000.")
+        info("knoi-sample io dispatcher delay 1000.")
         delay(1000)
-        info("qizhengchen io dispatcher delay 1000 run.")
+        info("knoi-sample io dispatcher delay 1000 run.")
     }
 
     ioScope.launch {
@@ -209,22 +209,22 @@ fun testCoroutines() {
             42 // 返回计算结果
         }
 
-        info("qizhengchen waiting for the result...")
+        info("knoi-sample waiting for the result...")
         // 等待异步计算的结果
         val result: Int = deferredResult.await()
-        info("qizhengchen async result: $result")
+        info("knoi-sample async result: $result")
     }
 
     ioScope.launch {
         val job = ioScope.launch {
             repeat(10) { i ->
-                info("qizhengchen: job run $i ...")
+                info("knoi-sample: job run $i ...")
                 delay(1000L)
             }
         }
         delay(3000L)
         job.cancelAndJoin()
-        info("qizhengchen: cancel and join.")
+        info("knoi-sample: cancel and join.")
     }
 
     ioScope.launch {
@@ -243,14 +243,14 @@ fun testCoroutines() {
 
         GlobalScope.launch {
             withContext(Dispatchers.Main) {
-                info("qizhengchen mainScope111")
+                info("knoi-sample mainScope111")
             }
         }
     }
 
     GlobalScope.launch {
         withContext(Dispatchers.Main) {
-            info("qizhengchen mainScope111")
+            info("knoi-sample mainScope111")
         }
     }
 
@@ -264,32 +264,32 @@ fun testCoroutines() {
 
 @KNExport
 fun testMainHandler() {
-    info("qizhengchen testMainHandler")
+    info("knoi-sample testMainHandler")
     Worker.start().executeAfter {
-        info("qizhengchen testMainHandler sub thread.")
+        info("knoi-sample testMainHandler sub thread.")
         runOnMainThread {
-            info("qizhengchen runOnMainThread run")
+            info("knoi-sample runOnMainThread run")
         }
-        info("qizhengchen runOnMainThread delay 1000")
+        info("knoi-sample runOnMainThread delay 1000")
         runOnMainThread({
-            info("qizhengchen runOnMainThread delay 1000 run 111")
+            info("knoi-sample runOnMainThread delay 1000 run 111")
         }, 1000)
 
         val block = {
-            info("qizhengchen runOnMainThread cancel error, delay 2000 run")
+            info("knoi-sample runOnMainThread cancel error, delay 2000 run")
         }
-        info("qizhengchen runOnMainThread ${block.hashCode()} delay 2000")
+        info("knoi-sample runOnMainThread ${block.hashCode()} delay 2000")
         runOnMainThread(block, 2000)
         cancelBlock(block)
-        info("qizhengchen cancelBlock ${block.hashCode()}")
+        info("knoi-sample cancelBlock ${block.hashCode()}")
     }
-    info("qizhengchen testMainHandler main thread.")
+    info("knoi-sample testMainHandler main thread.")
     runOnMainThread {
-        info("qizhengchen runOnMainThread run")
+        info("knoi-sample runOnMainThread run")
     }
-    info("qizhengchen runOnMainThread delay 1000")
+    info("knoi-sample runOnMainThread delay 1000")
     runOnMainThread({
-        info("qizhengchen runOnMainThread delay 1000 run 222")
+        info("knoi-sample runOnMainThread delay 1000 run 222")
     }, 1000)
 
 }
@@ -303,7 +303,7 @@ fun testLoadBalance() {
             info("methodWithCallbackReturnCallback:" + it.first().toKString())
         }
         info(
-            "qizhengchen getTestServiceAInWorkerApi result = ${
+            "knoi-sample getTestServiceAInWorkerApi result = ${
                 result.invoke(
                     arrayOf(
                         JSValue.createJSValue(
@@ -322,7 +322,7 @@ fun testLoadBalance() {
         info("methodWithCallbackReturnCallback:" + it.first().toKString())
     }
     info(
-        "qizhengchen getTestServiceAInWorkerApi result = ${
+        "knoi-sample getTestServiceAInWorkerApi result = ${
             result.invoke(
                 arrayOf(
                     JSValue.createJSValue(
@@ -343,23 +343,23 @@ fun testJSFunction() {
 
     val jsCallback = getJSFunction("testJsCallbackReturnVoid")
     jsCallback?.invoke<Unit>({ result: Array<JSValue> ->
-        info("qizhengchen testJsCallbackReturnVoid result = ${result[0].toKString()}")
+        info("knoi-sample testJsCallbackReturnVoid result = ${result[0].toKString()}")
     })
 
     val strResult = getJSFunction("testStringReturnStringForKMM")?.invoke<String>("KMM")
-    info("qizhengchen testStringReturnStringForKMM result = $strResult")
+    info("knoi-sample testStringReturnStringForKMM result = $strResult")
     val uint8ArrayResult = getJSFunction("testUint8ArrayReturnVoidForKMM")?.invoke<ArrayBuffer>()
-    info("qizhengchen testUint8ArrayReturnVoidForKMM result = ${uint8ArrayResult?.getCount()}")
+    info("knoi-sample testUint8ArrayReturnVoidForKMM result = ${uint8ArrayResult?.getCount()}")
     val doubleResult = getJSFunction("testNumberReturnNumberForKMM")?.invoke<Double>(42.0)
-    info("qizhengchen testNumberReturnNumberForKMM result = $doubleResult")
+    info("knoi-sample testNumberReturnNumberForKMM result = $doubleResult")
     val boolResult = getJSFunction("testBooleanReturnBooleanForKMM")?.invoke<Boolean>(true)
-    info("qizhengchen testBooleanReturnBooleanForKMM result = $boolResult")
+    info("knoi-sample testBooleanReturnBooleanForKMM result = $boolResult")
     getJSFunction("testVoidReturnVoidForKMM")?.invoke<Unit>()
 
     val map = mapOf<String, Any?>("name" to "KMM", "arg" to 42)
     val mapResult =
         getJSFunction("testObjectReturnObjectForKMM")?.invoke<HashMap<String, Any?>>(map)
-    info("qizhengchen testObjectReturnObjectForKMM result = $mapResult")
+    info("knoi-sample testObjectReturnObjectForKMM result = $mapResult")
 
     val buffer = nativeHeap.allocArray<uint8_tVar>(8)
     buffer[0] = 0u
@@ -372,7 +372,7 @@ fun testJSFunction() {
             .getData<uint8_tVar>()
 
     info(
-        "qizhengchen testArrayBufferReturnArrayBufferForKMM result = ${arrayBufferResult?.get(4)} " + "${
+        "knoi-sample testArrayBufferReturnArrayBufferForKMM result = ${arrayBufferResult?.get(4)} " + "${
             arrayBufferResult?.get(
                 5
             )
@@ -391,7 +391,7 @@ fun testJSFunction() {
             arrayBufferInt32
         )?.getData<int32_tVar>()
     info(
-        "qizhengchen testArrayBufferInt32ReturnArrayBufferInt32ForKMM result = ${
+        "knoi-sample testArrayBufferInt32ReturnArrayBufferInt32ForKMM result = ${
             arrayBufferInt32Result?.get(
                 4
             )
@@ -408,18 +408,18 @@ fun testJSFunction() {
 }
 
 fun testJSFunctionSubThread() {
-    info("qizhengchen Dispatchers.IO in sub thread")
+    info("knoi-sample Dispatchers.IO in sub thread")
     val jsFunction = getJSFunction("testStringReturnStringForKMM");
-    info("qizhengchen getJSFunction testStringReturnStringForKMM in sub thread")
+    info("knoi-sample getJSFunction testStringReturnStringForKMM in sub thread")
     val result = jsFunction?.invoke<String>("KMM")
-    info("qizhengchen invoke testStringReturnStringForKMM $result in sub thread")
+    info("knoi-sample invoke testStringReturnStringForKMM $result in sub thread")
 //    jsFunction?.invokeAsync<String>("KMM")
-//    info("qizhengchen invokeAsync testStringReturnStringForKMM in sub thread")
+//    info("knoi-sample invokeAsync testStringReturnStringForKMM in sub thread")
 }
 
 @KNExport
 fun testServiceInSubThread() {
-    info("qizhengchen testServiceInSubThread in sub thread")
+    info("knoi-sample testServiceInSubThread in sub thread")
     Worker.start().executeAfter {
         testService()
     }
@@ -427,7 +427,7 @@ fun testServiceInSubThread() {
 
 @KNExport
 fun testJSValueInSubThread() {
-    info("qizhengchen testJSValueInSubThread in sub thread")
+    info("knoi-sample testJSValueInSubThread in sub thread")
     Worker.start().executeAfter {
         testJSValue()
     }
@@ -435,6 +435,6 @@ fun testJSValueInSubThread() {
 
 @KNExport
 fun testServiceInJSWorker() {
-    info("qizhengchen testServiceInJSWorker.")
+    info("knoi-sample testServiceInJSWorker.")
     getTestServiceAInWorkerApi().methodWithUnit()
 }

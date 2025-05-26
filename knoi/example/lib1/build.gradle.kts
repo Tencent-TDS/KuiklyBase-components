@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.konan.target.HostManager
 
 plugins {
     kotlin("multiplatform")
-    id("com.tencent.tmm.knoi.plugin")
+    id("com.tencent.kuiklybase.knoi.plugin")
 }
 
 @OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class) kotlin {
@@ -20,7 +20,6 @@ plugins {
     sourceSets {
         val ohosArm64Main by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.3-kno")
             }
         }
         val commonTest by getting {

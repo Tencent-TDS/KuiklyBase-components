@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.jetbrainsKotlinAndroid)
     id("com.android.application")
-    id("com.tencent.tmm.knoi.plugin")
+    id("com.tencent.kuiklybase.knoi.plugin")
 }
 
 android {

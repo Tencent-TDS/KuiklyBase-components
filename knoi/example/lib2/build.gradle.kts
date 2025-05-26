@@ -1,6 +1,6 @@
 plugins {
     kotlin("multiplatform")
-    id("com.tencent.tmm.knoi.plugin")
+    id("com.tencent.kuiklybase.knoi.plugin")
     id("com.android.library")
 }
 
@@ -23,7 +23,6 @@ plugins {
     sourceSets {
         val ohosArm64Main by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.3-kno")
                 api(project(":example:lib1"))
             }
         }

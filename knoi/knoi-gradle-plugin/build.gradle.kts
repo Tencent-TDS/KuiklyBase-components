@@ -14,7 +14,7 @@ sourceSets {
 
 dependencies {
     //implementation(kotlin("stdlib"))
-    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21-mini-005")
+    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21-KBA-003")
     compileOnly("com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:2.0.21-1.0.28")
     implementation(gradleApi())
 }
@@ -35,7 +35,7 @@ gradlePlugin {
         create(property("ID").toString()) {
             id = property("ID").toString()
             implementationClass = property("IMPLEMENTATION_CLASS").toString()
-            version = property("VERSION").toString()
+            version = version
             description = property("DESCRIPTION").toString()
             displayName = property("DISPLAY_NAME").toString()
         }
@@ -48,7 +48,7 @@ tasks.register("genVersionFile") {
     file.delete()
     file.parentFile.mkdirs()
     file.createNewFile()
-    val version = project.properties["VERSION"].toString()
+    val version = project.version.toString()
     println("genVersionFile version = $version")
     file.writeText(version)
 }

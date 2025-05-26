@@ -1,6 +1,6 @@
 plugins {
     kotlin("multiplatform")
-    id("com.tencent.tmm.knoi.plugin")
+    id("com.tencent.kuiklybase.knoi.plugin")
     id("com.android.library")
 }
 

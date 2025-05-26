@@ -5,17 +5,17 @@ export default class SingletonTestServiceAImpl implements SingletonTestServiceA 
 
   constructor() {
     this.number = 42
-    console.log("qizhengchen SingletonTestServiceAImpl constructor...");
+    console.log("knoi-sample SingletonTestServiceAImpl constructor...");
   }
 
   method1(str: String) {
-    console.log("qizhengchen SingletonTestServiceAImpl method1 call... params :" + str);
-    console.log("qizhengchen SingletonTestServiceAImpl method1 call... name : this.number" + this.number);
+    console.log("knoi-sample SingletonTestServiceAImpl method1 call... params :" + str);
+    console.log("knoi-sample SingletonTestServiceAImpl method1 call... name : this.number" + this.number);
   }
 
   method2(str: String) {
-    console.log("qizhengchen SingletonTestServiceAImpl method2 call... params :" + str);
-    console.log("qizhengchen SingletonTestServiceAImpl method2 call... name : this.number" + this.number);
+    console.log("knoi-sample SingletonTestServiceAImpl method2 call... params :" + str);
+    console.log("knoi-sample SingletonTestServiceAImpl method2 call... name : this.number" + this.number);
     return str + "In ArkTS"
   }
 }

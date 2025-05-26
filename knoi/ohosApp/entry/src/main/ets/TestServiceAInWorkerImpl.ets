@@ -6,11 +6,11 @@ export default class TestServiceAInWorkerImpl implements TestServiceA {
 
   constructor() {
     this.number = 42
-    console.log("qizhengchen TestServiceAInWorkerImpl constructor...");
+    console.log("knoi-sample TestServiceAInWorkerImpl constructor...");
   }
 
   methodWithCallbackReturnCallback4(a: Function): string {
-    console.log("qizhengchen methodWithCallbackReturnCallback4 ...");
+    console.log("knoi-sample methodWithCallbackReturnCallback4 ...");
     a("methodWithCallbackReturnCallback4 callback params")
     return "string in arkTS"
   }

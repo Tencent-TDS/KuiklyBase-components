@@ -1,7 +1,6 @@
 package com.tencent.tmm.knoi
 
 import com.tencent.tmm.knoi.logger.logProxy
-import com.tencent.tmm.kotlin_stdblit_platform_ext.registerDefaultUnhandledExceptionHook
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.ohos.LOG_APP
 import platform.ohos.LogLevel
@@ -17,7 +16,6 @@ public fun preInitEnv(env: napi_env, debug: Boolean) {
     logProxy = {level: LogLevel, message: String ->
         OH_LOG_Print(LOG_APP, level, 1u, "knoi-sample", message)
     }
-    registerDefaultUnhandledExceptionHook()
 }
 
 @OptIn(NativeRuntimeApi::class) fun configureGC() {

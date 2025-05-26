@@ -1,9 +1,18 @@
+// Copyright 2025 Tencent Inc. All rights reserved.
+//
+// Author: qizhengchen@tencent.com
+//
+// napi Function C Api
+//
 #include "function.h"
-#include "hilog/log.h"
-#include <future>
 #include <unistd.h>
+#include <future>
+#include "hilog/log.h"
 
 typedef void *(*callJSFunction)(void *data);
+
+// 同步调用最大超时时间
+constexpr int kThreadSafeFunctionMaxTimeoutSeconds = 10;
 
 struct CallbackData {
     void *data;
@@ -45,7 +54,7 @@ void callThreadSafeFunctionWithData(napi_threadsafe_function tsfn, void *data) {
 }
 
 static void callJS(napi_env env, napi_value noUsed, void *context, void *data) {
-    auto *callbackData = (CallbackData *) data;
+    auto *callbackData = reinterpret_cast<CallbackData *>(data);
     napi_handle_scope scope;
     napi_open_handle_scope(env, &scope);
     auto callback = (callJSFunction) callbackData->callback;
@@ -75,15 +84,29 @@ callThreadSafeFunction(napi_threadsafe_function tsfn, void *callback, void *data
             .result = {},
             .sync = sync
     };
-    // Worker 线程 napi_call_threadsafe_function_with_priority 存在 bug，已提 ir 给华为
-    if (tsfnOriginTid == getpid()) {
-        // with
+    auto mainTid = getpid();
+    if (tsfnOriginTid == mainTid) {
         napi_call_threadsafe_function_with_priority(tsfn, callbackData, napi_priority_high, true);
     } else {
-        napi_call_threadsafe_function(tsfn, (void *) callbackData, napi_tsfn_blocking);
+        napi_call_threadsafe_function(tsfn, reinterpret_cast<void *>(callbackData), napi_tsfn_blocking);
     }
     if (sync) {
-        return callbackData->result.get_future().get();
+        auto future = callbackData->result.get_future();
+#ifdef DEBUG
+        if (tsfnOriginTid == mainTid) {
+            return future.get();
+        } else {
+            auto state = future.wait_for(std::chrono::seconds(kThreadSafeFunctionMaxTimeoutSeconds));
+            if (state == std::future_status::ready) {
+                return future.get();
+            } else {
+                OH_LOG_Print(LogType::LOG_APP, LOG_INFO, 1u, "knoi", "thread safe function timeout.");
+                abort();
+            }
+        }
+#else
+        return future.get();
+#endif
     } else {
         return nullptr;
     }

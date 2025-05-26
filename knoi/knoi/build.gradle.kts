@@ -45,7 +45,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(libs.knoi.annotation)
-                implementation("org.jetbrains.kotlinx:atomicfu:0.23.2-dev-2")
+                implementation("org.jetbrains.kotlinx:atomicfu:0.23.2-KBA-001")
 //                api(project(":knoi-annotation"))
             }
         }

@@ -17,7 +17,7 @@ fun loadModuleToJSValueWithInfo(path: String?, moduleInfo: String?): JSValue {
     memScoped {
         val resultVar = alloc<napi_valueVar>()
         val status = loadModuleWithInfo(getEnv(), path, moduleInfo, resultVar.ptr)
-        if (status.value.toInt() != 0) {
+        if (status.toInt() != 0) {
             throw Exception("load model $path $moduleInfo failed")
         }
         val resultValue = resultVar.value

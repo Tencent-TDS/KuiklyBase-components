@@ -194,7 +194,7 @@ open class TestServiceB {
     // 传入二进制数据返回二进制数据
     @OptIn(ExperimentalForeignApi::class)
     fun methodWithArrayBufferReturnArrayBuffer(buffer: ArrayBuffer): ArrayBuffer {
-        info("qizhengchen methodWithArrayBufferReturnArrayBuffer")
+        info("methodWithArrayBufferReturnArrayBuffer")
         val bufferArray = buffer.getData<uint8_tVar>()
         bufferArray[4] = 4u
         bufferArray[5] = 5u

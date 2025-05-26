@@ -6,11 +6,11 @@ export default class TestServiceAImpl {
 
   constructor() {
     this.number = 42
-    console.log("qizhengchen TestServiceA constructor...");
+    console.log("knoi-sample TestServiceA constructor...");
   }
 
   methodWithCallbackReturnCallback4(a: Function): string {
-    console.log("qizhengchen methodWithCallbackReturnCallback4 ...");
+    console.log("knoi-sample methodWithCallbackReturnCallback4 ...");
     a("methodWithCallbackReturnCallback4 callback params")
     return "string in arkTS"
   }
@@ -77,7 +77,7 @@ export default class TestServiceAImpl {
   }
 
   methodWithArrayBufferReturnArrayBuffer(a: ArrayBuffer): ArrayBuffer | null {
-    console.log("qizhengchen methodWithArrayBufferReturnArrayBuffer return null");
+    console.log("knoi-sample methodWithArrayBufferReturnArrayBuffer return null");
     let buffer = new Int32Array(a)
     buffer[4] = 88
     buffer[5] = 89

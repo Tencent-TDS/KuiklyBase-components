@@ -1,6 +1,6 @@
 plugins {
     kotlin("multiplatform")
-    id("com.tencent.tmm.knoi.plugin")
+    id("com.tencent.kuiklybase.knoi.plugin")
     id("com.android.library")
     kotlin("native.cocoapods")
 }
@@ -54,13 +54,11 @@ plugins {
             dependencies {
                 api(project(":example:lib2"))
                 api(project(":example:sample-api"))
-                implementation(libs.kotlin.stdlib.platform.ext)
             }
         }
         val ohosArm64Main by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.3-kno")
-                api("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0-RC.8")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0-KBA-001")
             }
         }
         val commonTest by getting {
