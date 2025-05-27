@@ -4,7 +4,7 @@ plugins {
     kotlin("multiplatform").version("2.0.21-KBA-003").apply(false)
     id("com.google.devtools.ksp") version "2.0.21-1.0.28" apply false
     alias(libs.plugins.jetbrainsKotlinAndroid) apply false
-    id("com.tencent.kuiklybase.knoi.plugin").version("0.0.3-SNAPSHOT").apply(false)
+    id("com.tencent.kuiklybase.knoi.plugin").version("0.0.2").apply(false)
 }
 
 tasks.register("clean", Delete::class) {
