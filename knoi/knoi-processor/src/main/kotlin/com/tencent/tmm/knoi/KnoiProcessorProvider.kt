@@ -78,7 +78,7 @@ class KnoiProcessor(val environment: SymbolProcessorEnvironment) :
         val configFilePath = options[OPTION_CONFIG_FILE] ?: return
         File(configFilePath).readText().split("\n").forEach {
             val entry = it.split("=")
-            if(entry.isEmpty() || entry.size != 2) {
+            if (entry.isEmpty() || entry.size != 2) {
                 return@forEach
             }
             options[entry[0]] = entry[1]
@@ -88,7 +88,7 @@ class KnoiProcessor(val environment: SymbolProcessorEnvironment) :
 }
 
 lateinit var environmentGlobal: SymbolProcessorEnvironment
-fun warming(string: String){
+fun warming(string: String) {
     environmentGlobal.logger.warn(string)
 }
 

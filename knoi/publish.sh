@@ -3,7 +3,7 @@
 ./gradlew knoi-annotation:publish
 
 ./gradlew knoi-processor:clean && ./gradlew knoi-processor:assemble
-./gradlew knoi-processor:publish
+./gradlew knoi-processor:publishJvmPublicationToMavenRepository
 
 ./gradlew knoi:clean && ./gradlew knoi:assemble
 ./gradlew knoi:publish

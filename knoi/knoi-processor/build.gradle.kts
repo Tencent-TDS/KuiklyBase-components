@@ -28,8 +28,21 @@ kotlin {
                 implementation("com.google.devtools.ksp:symbol-processing-api:$kspVersion")
             }
             kotlin.srcDir("src/main/kotlin")
-            resources.srcDir("src/main/resources")
+            resources.srcDirs("src/main/resources", buildDir.absolutePath + "/version/")
         }
 
     }
 }
+
+// 生成 version.txt，用于注入版本
+tasks.register("genVersionFile") {
+    val file = File(buildDir.absolutePath + "/version/version.txt")
+    file.delete()
+    file.parentFile.mkdirs()
+    file.createNewFile()
+    val version = project.version.toString()
+    println("genVersionFile version = $version")
+    file.writeText(version)
+}
+
+tasks.findByName("jvmProcessResources")?.dependsOn(tasks.findByName("genVersionFile"))
