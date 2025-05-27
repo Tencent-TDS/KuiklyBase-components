@@ -49,7 +49,7 @@ fun genServiceTypeScriptFile(
     file.parentFile.mkdirs()
     var fileContent = HEADER_TIPS
     if (isProvider) {
-        fileContent += "import { getService } from \"knoi\"\n\n"
+        fileContent += "import { getService } from \"@kuiklybase/knoi\"\n\n"
     }
     list.forEach {
         fileContent += genTypeScriptInterface(it.serviceName, it.functionList)

@@ -2,7 +2,7 @@ package com.tencent.tmm.knoi.annotation
 
 import kotlin.reflect.KClass
 
-const val VERSION = "0.0.2"
+const val VERSION = "0.0.4"
 
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.FIELD)
 annotation class KNExport(val name: String = "")

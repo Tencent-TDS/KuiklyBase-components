@@ -32,17 +32,14 @@ kotlin {
         }
 
     }
+
 }
 
-// 生成 version.txt，用于注入版本
-tasks.register("genVersionFile") {
-    val file = File(buildDir.absolutePath + "/version/version.txt")
-    file.delete()
-    file.parentFile.mkdirs()
-    file.createNewFile()
-    val version = project.version.toString()
-    println("genVersionFile version = $version")
-    file.writeText(version)
+tasks.withType<Jar>().configureEach {
+    manifest {
+        attributes(
+            "Implementation-Title" to "knoi-processor",
+            "Implementation-Version" to project.version,
+        )
+    }
 }
-
-tasks.findByName("jvmProcessResources")?.dependsOn(tasks.findByName("genVersionFile"))

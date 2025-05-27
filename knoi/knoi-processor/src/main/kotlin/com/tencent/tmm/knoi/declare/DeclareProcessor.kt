@@ -59,7 +59,7 @@ fun genDeclareTypeScriptFile(
     file.delete()
     file.parentFile.mkdirs()
     var fileContent = HEADER_TIPS
-    fileContent += "import { getDeclare } from \"knoi\"\n\n"
+    fileContent += "import { getDeclare } from \"@kuiklybase/knoi\"\n\n"
     list.forEach {
         fileContent += genGetDeclareTypeScript(it)
     }

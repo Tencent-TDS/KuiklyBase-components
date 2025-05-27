@@ -8,7 +8,7 @@
   "version": "1.0.0",
   "dynamicDependencies": {},
   "dependencies": {
-    "knoi":"file:../knoi"
-//    "knoi":"0.0.16"
+//    "knoi":"file:../knoi"
+    "@kuiklybase/knoi":"0.0.1"
   }
 }

@@ -1,4 +1,4 @@
-import { bind, getService, invoke, registerServiceProvider, registerSingleServiceProvider, setup, unBind } from "knoi"
+import { bind, getService, invoke, registerServiceProvider, registerSingleServiceProvider, setup, unBind } from "@kuiklybase/knoi"
 import { MultiCallbackListenerImpl } from '../knoi/MultlCallbackListener'
 import {
   SingletonTestServiceB,

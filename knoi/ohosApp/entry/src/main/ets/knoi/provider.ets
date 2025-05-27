@@ -1,7 +1,7 @@
 /***
 *    !!!  GEN CODE DO NOT EDIT  !!!
 ***/
-import { getService } from "knoi"
+import { getService } from "@kuiklybase/knoi"
 
 export interface ServiceAInCommon {
             

@@ -1,7 +1,7 @@
 /***
 *    !!!  GEN CODE DO NOT EDIT  !!!
 ***/
-import { getDeclare } from "knoi"
+import { getDeclare } from "@kuiklybase/knoi"
 
 export const testString = getDeclare<string>("com.tencent.tmm.knoi.sample.testString")
 

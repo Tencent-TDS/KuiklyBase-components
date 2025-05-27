@@ -1,5 +1,5 @@
 import { ErrorEvent, MessageEvents, ThreadWorkerGlobalScope, worker } from '@kit.ArkTS';
-import { invoke, registerServiceProvider } from 'knoi';
+import { invoke, registerServiceProvider } from "@kuiklybase/knoi";
 import TestServiceAInWorkerImpl from '../TestServiceAInWorkerImpl';
 
 const workerPort: ThreadWorkerGlobalScope = worker.workerPort;

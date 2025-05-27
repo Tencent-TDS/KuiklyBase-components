@@ -38,7 +38,7 @@ Kotlin Native & ArkTS 互相调用能力，无需写 C/C++ 桥接代码。
 ohpm install @kuiklybase/knoi
 
 // 初始化
-import { setup, init } from "knoi"
+import { setup, init } from "@kuiklybase/knoi"
 setup("libkn.so", BuildProfile.DEBUG) // KMP 生成的动态库名字
 init()
 

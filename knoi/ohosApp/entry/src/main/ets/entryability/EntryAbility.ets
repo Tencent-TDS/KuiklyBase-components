@@ -3,7 +3,7 @@ import hilog from '@ohos.hilog';
 import UIAbility from '@ohos.app.ability.UIAbility';
 import Want from '@ohos.app.ability.Want';
 import window from '@ohos.window';
-import { setup } from 'knoi';
+import { setup } from "@kuiklybase/knoi";
 import { worker } from '@kit.ArkTS';
 
 setup("libkn.so", true)

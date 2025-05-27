@@ -32,3 +32,12 @@ kotlin {
         }
     }
 }
+
+tasks.withType<Jar>().configureEach {
+    manifest {
+        attributes(
+            "Implementation-Title" to "knoi-annotation",
+            "Implementation-Version" to project.version,
+        )
+    }
+}

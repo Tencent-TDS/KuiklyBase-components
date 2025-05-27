@@ -1,5 +1,5 @@
 import systemDateTime from '@ohos.systemDateTime';
-import { bind, getService, invoke, registerServiceProvider, registerSingleServiceProvider, setup, unBind } from "knoi"
+import { bind, getService, invoke, registerServiceProvider, registerSingleServiceProvider, setup, unBind } from "@kuiklybase/knoi"
 import { ArrayList } from '@kit.ArkTS';
 import { BenchmarkForwordImpl, BenchmarkImpl } from '../knoi/benchmarkImple';
 
