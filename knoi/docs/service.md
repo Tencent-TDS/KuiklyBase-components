@@ -22,7 +22,7 @@ interface TestServiceA {
 ***注：如 Release 开启混淆，需对 ArkTs 侧的 ServiceProvider 进行 keep。详细混淆配置见 [华为文档](https://developer.huawei.com/consumer/cn/doc/harmonyos-guides-V5/source-obfuscation-V5)***
 
 ```
-import { registerServiceProvider, registerSingleServiceProvider } from "knoi"
+import { registerServiceProvider, registerSingleServiceProvider } from "@kuiklybase/knoi"
 //TestService 为自行定义的 Ark TS class
 //TestService 可实现 Ksp 自动生成的 d.ts 文件（自动生成在 build/ts-api/ 下）,需自行在鸿蒙工程引用
 registerServiceProvider("TestServiceA", /** 是否单例 **/ false, TestService)

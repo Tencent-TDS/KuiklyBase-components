@@ -5,7 +5,7 @@
   "author": "Tencent-TDS",
   "description": "Kotlin Native Ohos Interaction.",
   "main": "Index.ets",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "dynamicDependencies": {},
   "dependencies": {
     "libknoi.so": "file:./src/main/types/libknoi"

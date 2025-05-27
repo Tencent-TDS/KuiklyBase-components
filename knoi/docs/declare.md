@@ -29,7 +29,7 @@ class DeclareTest {
 生成 Typescript 代码如下：
 
 ```javascript
-import { getDeclare } from "knoi"
+import { getDeclare } from "@kuiklybase/knoi"
 
 export const testString = getDeclare<string>("com.tencent.tmm.knoi.sample.testString")
 

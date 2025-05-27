@@ -8,7 +8,7 @@
 
 
 ```javascript
-import { bind } from "knoi"
+import { bind } from "@kuiklybase/knoi"
 
 bind("testStringReturnStringForKMM", (name: string) => {
       console.log("sample testStringReturnStringForKMM")
@@ -42,7 +42,7 @@ fun testStringFunction(name: String): String {
 - 2、ArkTS 调用 KMM （ArkTS）
 
 ```javascript
-import { invoke } from "knoi"
+import { invoke } from "@kuiklybase/knoi"
 
 let result: String = invoke<String>("testStringReturnString", "input")
 console.log("invoke testStringReturnString result " + result);

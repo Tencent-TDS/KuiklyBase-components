@@ -47,7 +47,7 @@ Kotlin Native & ArkTS 互相调用能力，无需写 C/C++ 桥接代码。
 // 添加依赖 （在 entry/oh-package.json5，非根目录的oh-package.json5）
 // ArkTS 侧动态版本有缓存问题，生效慢，如有新增 API 无法调用，可以直接使用最新版本
   "dependencies": {
-    "knoi":"0.1.8"
+    "@kuiklybase/knoi":"0.0.4"
   }
 
 // 初始化
