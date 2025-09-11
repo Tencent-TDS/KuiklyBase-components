@@ -71,6 +71,7 @@ typedef struct {
 // Curl 响应信息
 typedef struct {
     int code;
+    int httpCode;
     const char *errorMsg;
     int errorMsgLen;
     const char *headers;
