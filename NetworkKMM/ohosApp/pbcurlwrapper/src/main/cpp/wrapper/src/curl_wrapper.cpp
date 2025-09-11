@@ -205,11 +205,6 @@ class CurlClient {
             std::string header_opt = key + ": " + value;
             logI(log_tag_, "request header[" + std::to_string(i) + "]: " + header_opt);
             header_list_ = curl_slist_append(header_list_, header_opt.c_str());
-            if (header_list_ == nullptr) {
-                header_list_ = curl_slist_append(header_list_, header_opt.c_str());
-            } else {
-                curl_slist_append(header_list_, header_opt.c_str());
-            }
         }
 
         // url
@@ -280,6 +275,7 @@ class CurlClient {
 
         // 处理 gzip 响应数据
         int errorCode = res;
+        int httpCode = 0;
         if (res == CURLE_OK) {
             // 请求成功才执行 gzip 解压
             int upzipCode = HandleGzipDataIfNeed();
@@ -291,6 +287,7 @@ class CurlClient {
                 std::string error_msg = "gzip unzip failed";
                 std::memcpy(curl_error_msg_, error_msg.c_str(), error_msg.length());
             }
+            curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &httpCode);
         }
 
         char *ip = nullptr;
@@ -302,6 +299,7 @@ class CurlClient {
 
         curl_response_ = new CurlResponse();
         curl_response_->code = errorCode;
+        curl_response_->httpCode = httpCode;
         curl_response_->headerLen = headers_.length();
         curl_response_->headers = const_cast<char *>(reinterpret_cast<const char *>(headers_.c_str()));
         curl_response_->redirectUrl = const_cast<char *>(reinterpret_cast<const char *>(redirect_url_.c_str()));
