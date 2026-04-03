@@ -5,6 +5,11 @@ export function invoke<R>(method: string, ...params: any[]): R {
   return globalThis.knoi.invoke(method, ...params) as R
 }
 
+export function invokeRetPromise<R>(method: string, ...params: any[]): Promise<R> {
+  Environment.get().initIfNeed()
+  return globalThis.knoi.invokeRetPromise(method, ...params) as Promise<R>
+}
+
 export function bind(name: string, func: Function) {
   Environment.get().initIfNeed()
   return globalThis.knoi.bind(name, func)

@@ -111,4 +111,3 @@ callThreadSafeFunction(napi_threadsafe_function tsfn, void *callback, void *data
         return nullptr;
     }
 }
-

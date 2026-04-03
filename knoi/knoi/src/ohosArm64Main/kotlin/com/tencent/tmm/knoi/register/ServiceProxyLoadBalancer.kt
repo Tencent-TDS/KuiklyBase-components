@@ -24,16 +24,17 @@ class ServiceProxyLoadBalancer {
     }
 
     fun getBalanceWrapper(): ServiceWrapper? {
-        val finalWrapper = if (get_tid() == mainTid){
+        val currentTid = get_tid()
+        val finalWrapper = if (currentTid == mainTid){
             serviceWrapMain
         }else{
             serviceWrapWorker ?: serviceWrapMain
         }
         if (isDebug){
-            if (get_tid() == mainTid){
-                debug("getBalanceWrapper main thread ${get_tid()} get wrapper ${finalWrapper?.name} use ${finalWrapper?.registerTid} thread wrapper mainTid=$mainTid")
+            if (currentTid == mainTid){
+                debug("getBalanceWrapper main thread $currentTid get wrapper ${finalWrapper?.name} use ${finalWrapper?.registerTid} thread wrapper mainTid=$mainTid")
             }else{
-                debug("getBalanceWrapper sub thread ${get_tid()} get wrapper ${finalWrapper?.name} use ${finalWrapper?.registerTid} thread wrapper mainTid=$mainTid")
+                debug("getBalanceWrapper sub thread $currentTid get wrapper ${finalWrapper?.name} use ${finalWrapper?.registerTid} thread wrapper mainTid=$mainTid")
             }
         }
         return finalWrapper

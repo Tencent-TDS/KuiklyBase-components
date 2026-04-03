@@ -14,7 +14,9 @@ include_directories(${NAPI_BRIDGE_ROOT_PATH}/include)
 
 add_library(${TARGET_NAME} STATIC
         src/cb_info.cpp
+        src/async.cpp
         include/cb_info.h
+        include/async.h
         src/type.cpp
         include/type.h
         include/property.h
@@ -45,4 +47,3 @@ SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--emit-relocs --verbos
 
 target_link_libraries(${TARGET_NAME} PUBLIC libace_napi.z.so libhilog_ndk.z.so)
 target_compile_features(${TARGET_NAME} PUBLIC cxx_std_17)
-

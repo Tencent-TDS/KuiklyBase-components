@@ -1,5 +1,5 @@
 package = platform.ohos.knoi
-headers = array.h cb_info.h function.h object.h property.h reference.h type.h arraybuffer.h clazz.h module.h
+headers = array.h async.h cb_info.h function.h object.h property.h reference.h type.h arraybuffer.h clazz.h module.h
 staticLibraries = libnapi_bridge.a
 libraryPaths = libs
 linkerOpts = -lhilog_ndk.z -lace_napi.z -lc++_shared

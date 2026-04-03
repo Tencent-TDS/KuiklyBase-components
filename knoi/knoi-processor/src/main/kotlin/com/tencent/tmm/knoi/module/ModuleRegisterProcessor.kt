@@ -9,6 +9,8 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.ksp.writeTo
 import com.tencent.tmm.knoi.declare.Declare
 import com.tencent.tmm.knoi.declare.getDeclareBindName
+import com.tencent.tmm.knoi.function.AsyncExportFunction
+import com.tencent.tmm.knoi.function.getAsyncFunctionBindName
 import com.tencent.tmm.knoi.function.ExportFunction
 import com.tencent.tmm.knoi.function.getFunctionBindName
 import com.tencent.tmm.knoi.utils.isOhosArm64
@@ -33,10 +35,11 @@ fun genModuleInitializer(
     consumers: List<ServiceInfo>,
     providers: List<ServiceInfo>,
     functions: List<ExportFunction>,
+    asyncFunctions: List<AsyncExportFunction>,
     declares: List<Declare>,
     options: Map<String, String>
 ): Boolean {
-    if (consumers.isEmpty() && providers.isEmpty() && functions.isEmpty() && declares.isEmpty()) {
+    if (consumers.isEmpty() && providers.isEmpty() && functions.isEmpty() && asyncFunctions.isEmpty() && declares.isEmpty()) {
         return false
     }
     val moduleName = options[OPTION_MODULE_NAME]!!
@@ -65,6 +68,11 @@ fun genModuleInitializer(
         ${
         functions.filter { it.registerName.isNotBlank() }.map {
             "|${KNOI_MODULE_PACKAGE_NAME}.${moduleName}.${getFunctionBindName(it.registerName)}()"
+        }.joinToString("\n")
+    }
+    ${
+        asyncFunctions.filter { it.registerName.isNotBlank() }.map {
+            "|${KNOI_MODULE_PACKAGE_NAME}.${moduleName}.${getAsyncFunctionBindName(it.registerName)}()"
         }.joinToString("\n")
     }
     ${

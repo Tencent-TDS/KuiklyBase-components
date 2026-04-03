@@ -1,4 +1,4 @@
-import { bind, getService, invoke, registerServiceProvider, registerSingleServiceProvider, setup, unBind } from "@kuiklybase/knoi"
+import { bind, getService, invoke, invokeRetPromise, registerServiceProvider, registerSingleServiceProvider, setup, unBind } from "@kuiklybase/knoi"
 import { MultiCallbackListenerImpl } from '../knoi/MultlCallbackListener'
 import {
   SingletonTestServiceB,
@@ -161,6 +161,37 @@ struct Index {
             let data: ArrayBuffer = obj["data"]
             let dataInt32Buff: Int32Array = new Int32Array(data);
             console.log(`knoi-sample invoke testVoidReturnArrayBufferInMap result = ${dataInt32Buff[0]} ${dataInt32Buff[1]} ${dataInt32Buff[2]} ${dataInt32Buff[3]}`);
+          })
+        Text("ArkTS call KN Async")
+          .fontSize(40)
+          .fontWeight(FontWeight.Bold)
+          .onClick(() => {
+            invokeRetPromise<number>("testAsyncIntReturnInt", 42)
+              .then((result: number) => {
+                console.log("knoi-sample invokeRetPromise testAsyncIntReturnInt result = " + result)
+              })
+              .catch((error: Error) => {
+                console.error("knoi-sample invokeRetPromise testAsyncIntReturnInt error = " + error.message)
+              })
+
+            invokeRetPromise<void>("testAsyncVoidReturnVoid")
+              .then(() => {
+                console.log("knoi-sample invokeRetPromise testAsyncVoidReturnVoid resolved")
+              })
+              .catch((error: Error) => {
+                console.error("knoi-sample invokeRetPromise testAsyncVoidReturnVoid error = " + error.message)
+              })
+
+            invokeRetPromise<string>("testAsyncJSCallbackReturnString", (message: string) => {
+              console.log("knoi-sample invokeRetPromise testAsyncJSCallbackReturnString callback = " + message)
+              return message + " from ArkTS"
+            })
+              .then((result: string) => {
+                console.log("knoi-sample invokeRetPromise testAsyncJSCallbackReturnString result = " + result)
+              })
+              .catch((error: Error) => {
+                console.error("knoi-sample invokeRetPromise testAsyncJSCallbackReturnString error = " + error.message)
+              })
           })
         Text("KN call ArkTS")
           .fontSize(40)

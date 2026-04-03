@@ -1,6 +1,7 @@
 export {
   initEnvironment as init,
   invoke,
+  invokeRetPromise,
   bind,
   unBind,
   registerServiceProvider,

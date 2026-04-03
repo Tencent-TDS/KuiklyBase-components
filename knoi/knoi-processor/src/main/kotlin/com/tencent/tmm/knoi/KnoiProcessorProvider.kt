@@ -9,6 +9,7 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.tencent.tmm.knoi.callback.processCallbackList
 import com.tencent.tmm.knoi.declare.processDeclareList
+import com.tencent.tmm.knoi.function.processAsyncExportFunction
 import com.tencent.tmm.knoi.function.processExportFunction
 import com.tencent.tmm.knoi.module.genModuleInitializer
 import com.tencent.tmm.knoi.module.processAutoRegister
@@ -57,6 +58,7 @@ class KnoiProcessor(val environment: SymbolProcessorEnvironment) :
         }
         fillOptionsFromConfigFile(options)
         val functions = processExportFunction(codeGenerator, resolver, options)
+        val asyncFunctions = processAsyncExportFunction(codeGenerator, resolver, options)
         val consumers = processServiceConsumer(codeGenerator, resolver, options)
         val providers = processServiceProvider(codeGenerator, resolver, options)
         val declares = processDeclareList(codeGenerator, resolver, options)
@@ -65,7 +67,7 @@ class KnoiProcessor(val environment: SymbolProcessorEnvironment) :
 
 
         genModuleInitializer(
-            codeGenerator, resolver, consumers, providers, functions, declares, options
+            codeGenerator, resolver, consumers, providers, functions, asyncFunctions, declares, options
         )
         // 无生成的文件视为最后一轮 process，生成自动注册方法
         if (codeGenerator.generatedFile.isEmpty()) {

@@ -1,6 +1,7 @@
 package com.tencent.tmm.knoi
 
 import com.tencent.tmm.knoi.definder.registerDeclareForwarder
+import com.tencent.tmm.knoi.definder.registerAsyncForwarder
 import com.tencent.tmm.knoi.definder.registerForwarder
 import com.tencent.tmm.knoi.definder.registerServiceExport
 import com.tencent.tmm.knoi.definder.tsfnRegister
@@ -8,8 +9,8 @@ import com.tencent.tmm.knoi.jsbind.registerBindJSFunction
 import com.tencent.tmm.knoi.logger.isDebug
 import com.tencent.tmm.knoi.metric.initTraceFuncIfNeed
 import com.tencent.tmm.knoi.metric.trace
-import platform.ohos.knoi.get_tid
 import platform.ohos.knoi.get_pid
+import platform.ohos.knoi.get_tid
 import platform.ohos.napi_env
 import platform.ohos.napi_value
 import kotlin.native.concurrent.ThreadLocal
@@ -42,6 +43,8 @@ fun InitEnv(env: napi_env, export: napi_value, debug: Boolean) {
         registerDeclareForwarder(env, export)
         // 注入 Function 转发器
         registerForwarder(env, export)
+        // 注入 Async Function 转发器
+        registerAsyncForwarder(env, export)
         // 注入 bind 方法接口
         registerBindJSFunction(env, export)
         // 注入 Service 服务中转接口

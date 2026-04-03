@@ -7,6 +7,9 @@ const val VERSION = "0.0.4"
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.FIELD)
 annotation class KNExport(val name: String = "")
 
+@Target(AnnotationTarget.FUNCTION)
+annotation class KNExportRetPromise(val name: String = "")
+
 @Target(AnnotationTarget.CLASS)
 annotation class ServiceConsumer(val name: String = "")
 

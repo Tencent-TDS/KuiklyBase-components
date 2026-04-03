@@ -3,6 +3,7 @@
 package com.tencent.tmm.knoi.sample
 
 import com.tencent.tmm.knoi.annotation.KNExport
+import com.tencent.tmm.knoi.annotation.KNExportRetPromise
 import com.tencent.tmm.knoi.logger.info
 import com.tencent.tmm.knoi.type.ArrayBuffer
 import com.tencent.tmm.knoi.type.JSValue
@@ -11,6 +12,12 @@ import kotlinx.cinterop.allocArray
 import kotlinx.cinterop.nativeHeap
 import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.set
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import platform.ohos.LOG_APP
 import platform.ohos.LOG_INFO
 import platform.ohos.OH_LOG_Print
@@ -61,6 +68,26 @@ fun testBoolReturnBool(result: Boolean): Boolean {
 @KNExport
 fun testDoubleReturnDouble(result: Double): Double {
     return result + 1
+}
+
+@KNExportRetPromise
+fun testAsyncIntReturnInt(number: Int): Int {
+    return number + 100
+}
+
+@KNExportRetPromise
+fun testAsyncVoidReturnVoid() {
+    info("testAsyncVoidReturnVoid")
+}
+
+@KNExportRetPromise
+fun testAsyncJSCallbackReturnString(function: (args: Array<out Any?>) -> Any): String {
+    val result = function.invoke(arrayOf("async callback from KMM"))
+    return if (result is JSValue) {
+        result.toKString().orEmpty()
+    } else {
+        result.toString()
+    }
 }
 
 @KNExport
