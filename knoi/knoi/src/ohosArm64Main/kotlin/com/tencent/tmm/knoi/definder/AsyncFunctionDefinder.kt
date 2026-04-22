@@ -4,10 +4,13 @@ import com.tencent.tmm.knoi.converter.jsValueToKTValue
 import com.tencent.tmm.knoi.converter.ktValueToJSValue
 import com.tencent.tmm.knoi.exception.FunctionNotRegisterException
 import com.tencent.tmm.knoi.injectEnv
+import com.tencent.tmm.knoi.setCurrentAsyncInvokeOwnerTid
 import com.tencent.tmm.knoi.napi.defineFunctionToExport
 import com.tencent.tmm.knoi.napi.safeCaseNumberType
 import com.tencent.tmm.knoi.register.AsyncFunctionBindInfo
 import com.tencent.tmm.knoi.register.AsyncFunctionRegister
+import com.tencent.tmm.knoi.type.ArrayBuffer
+import com.tencent.tmm.knoi.type.JSValue
 import kotlinx.cinterop.COpaquePointer
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.StableRef
@@ -22,6 +25,7 @@ import platform.ohos.knoi.createAsyncWork
 import platform.ohos.knoi.createError
 import platform.ohos.knoi.createPromise
 import platform.ohos.knoi.deleteAsyncWork
+import platform.ohos.knoi.get_tid
 import platform.ohos.knoi.getAndClearLastException
 import platform.ohos.knoi.getCallbackInfoParamsSize
 import platform.ohos.knoi.getCbInfoWithSize
@@ -66,7 +70,8 @@ internal fun registerAsyncForwarder(env: napi_env, export: napi_value) {
 
 private sealed class AsyncExecutionContext(
     val bindInfo: AsyncFunctionBindInfo,
-    val params: Array<out Any?>
+    val params: Array<out Any?>,
+    val ownerTid: Int
 ) {
     var work: napi_async_work? = null
     var result: Any? = null
@@ -76,8 +81,9 @@ private sealed class AsyncExecutionContext(
 private class PromiseAsyncExecutionContext(
     bindInfo: AsyncFunctionBindInfo,
     params: Array<out Any?>,
+    ownerTid: Int,
     val deferred: napi_deferred?
-) : AsyncExecutionContext(bindInfo, params)
+) : AsyncExecutionContext(bindInfo, params, ownerTid)
 
 private fun getAsyncBindInfo(name: String): AsyncFunctionBindInfo {
     return asyncFunctionRegister.getBindInfo(name) ?: throw FunctionNotRegisterException(name)
@@ -111,7 +117,7 @@ private fun buildAsyncFunctionParams(
     return try {
         val paramsValue = mutableListOf<Any?>()
         paramsTypes.forEachIndexed { index, type ->
-            val value = jsValueToKTValue(env, params[index + 1], type)
+            val value = jsValueToAsyncKTValue(env, params[index + 1], type)
             paramsValue.add(safeCaseNumberType(value, type))
         }
         paramsValue.toTypedArray()
@@ -120,16 +126,84 @@ private fun buildAsyncFunctionParams(
     }
 }
 
+private fun jsValueToAsyncKTValue(
+    env: napi_env?,
+    value: napi_value?,
+    kType: KClass<out Any>
+): Any? {
+    if (env == null || value == null) {
+        return null
+    }
+    val converted = when (kType) {
+        JSValue::class -> JSValue(env, value)
+        ArrayBuffer::class -> ArrayBuffer(value)
+        else -> jsValueToKTValue(env, value, kType)
+    }
+    return normalizeAsyncInputValue(converted)
+}
+
+private fun ktValueToAsyncJSValue(
+    env: napi_env?,
+    value: Any?,
+    clazz: KClass<out Any>,
+    ownerTid: Int
+): napi_value? {
+    if (env == null || value == null) {
+        return null
+    }
+    val normalized = normalizeAsyncOutputValue(value, ownerTid)
+    return when (clazz) {
+        JSValue::class -> {
+            val jsValue = normalized as? JSValue ?: return null
+            jsValue.handle
+        }
+        ArrayBuffer::class -> {
+            val arrayBuffer = normalized as? ArrayBuffer ?: return null
+            arrayBuffer.handle
+        }
+        else -> ktValueToJSValue(env, normalized, clazz)
+    }
+}
+
+private fun normalizeAsyncInputValue(value: Any?): Any? {
+    return when (value) {
+        null -> null
+        is List<*> -> value.map { normalizeAsyncInputValue(it) }
+        is Array<*> -> Array(value.size) { index -> normalizeAsyncInputValue(value[index]) }
+        is Map<*, *> -> value.entries.associate { it.key to normalizeAsyncInputValue(it.value) }
+        else -> value
+    }
+}
+
+private fun normalizeAsyncOutputValue(value: Any?, ownerTid: Int): Any? {
+    return when (value) {
+        null -> null
+        is JSValue -> {
+            if (value.tid != ownerTid) {
+                throw IllegalStateException(
+                    "Async JSValue return must remain on the invoking JS thread. expectedTid=$ownerTid actualTid=${value.tid}"
+                )
+            }
+            value
+        }
+        is List<*> -> value.map { normalizeAsyncOutputValue(it, ownerTid) }
+        is Array<*> -> Array(value.size) { index -> normalizeAsyncOutputValue(value[index], ownerTid) }
+        is Map<*, *> -> value.entries.associate { it.key to normalizeAsyncOutputValue(it.value, ownerTid) }
+        else -> value
+    }
+}
+
 @OptIn(ExperimentalForeignApi::class)
 internal fun forwardInvokeRetPromise(env: napi_env?, callbackInfo: napi_callback_info?): napi_value? {
     injectEnv(env)
+    val ownerTid = get_tid()
     val methodName = getAsyncForwardFunctionName(env, callbackInfo)
     val bindInfo = getAsyncBindInfo(methodName)
     val params = buildAsyncFunctionParams(env, callbackInfo, bindInfo.paramsType)
     memScoped {
         val promiseValue = alloc<napi_valueVar>()
         val deferred = createPromise(env, promiseValue.ptr)
-        val context = PromiseAsyncExecutionContext(bindInfo, params, deferred)
+        val context = PromiseAsyncExecutionContext(bindInfo, params, ownerTid, deferred)
         val ref = StableRef.create(context)
         val work = createAsyncWork(
             env,
@@ -152,9 +226,12 @@ private fun createAsyncThrowableValue(env: napi_env?, throwable: Throwable?): na
 internal fun executePromiseAsyncFunction(env: napi_env?, data: COpaquePointer?) {
     val context = data?.asStableRef<PromiseAsyncExecutionContext>()?.get() ?: return
     try {
+        setCurrentAsyncInvokeOwnerTid(context.ownerTid)
         context.result = context.bindInfo.originFun(context.params)
     } catch (t: Throwable) {
         context.throwable = t
+    } finally {
+        setCurrentAsyncInvokeOwnerTid(null)
     }
 }
 
@@ -176,7 +253,12 @@ internal fun completePromiseAsyncFunction(
             rejectDeferred(env, context.deferred, createAsyncThrowableValue(env, throwable))
             return
         }
-        val value = ktValueToJSValue(env, context.result, context.bindInfo.returnType)
+        val value = try {
+            ktValueToAsyncJSValue(env, context.result, context.bindInfo.returnType, context.ownerTid)
+        } catch (t: Throwable) {
+            rejectDeferred(env, context.deferred, createAsyncThrowableValue(env, t))
+            return
+        }
         resolveDeferred(env, context.deferred, value ?: getUndefined(env))
     } finally {
         deleteAsyncWork(env, context.work)

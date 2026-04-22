@@ -22,6 +22,9 @@ import kotlin.native.concurrent.ThreadLocal
 @ThreadLocal
 private var tlsEnv: napi_env? = null
 
+@ThreadLocal
+private var tlsAsyncInvokeOwnerTid: Int? = null
+
 /**
  *  获取主线程 id
  */
@@ -58,6 +61,14 @@ internal fun injectEnv(env: napi_env?) {
 }
 
 fun getEnv(): napi_env? = tlsEnv
+
+internal fun setCurrentAsyncInvokeOwnerTid(tid: Int?) {
+    tlsAsyncInvokeOwnerTid = tid
+}
+
+fun getCurrentAsyncInvokeOwnerTid(): Int? {
+    return tlsAsyncInvokeOwnerTid
+}
 
 fun getTid(): Int {
     return get_tid()

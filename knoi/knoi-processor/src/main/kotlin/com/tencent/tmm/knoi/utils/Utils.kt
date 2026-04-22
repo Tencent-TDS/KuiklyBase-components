@@ -88,34 +88,20 @@ fun checkFunctionSupportType(functionList: List<FunctionInfo>): MutableList<Stri
     return result
 }
 
-private val asyncBlockedTypes = setOf(
-    JSVALUE_CLASS_NAME,
-    "com.tencent.tmm.knoi.type.ArrayBuffer"
-)
-
-private fun containsAsyncBlockedType(type: KSType?): Boolean {
-    if (type == null) {
-        return false
-    }
-    val className = type.toClassName().canonicalName
-    if (asyncBlockedTypes.contains(className)) {
-        return true
-    }
-    return type.arguments.any { containsAsyncBlockedType(it.type?.resolve()) }
-}
-
 fun checkAsyncFunctionSupportType(functionList: List<AsyncExportFunction>): MutableList<String> {
     val result = mutableListOf<String>()
     functionList.forEach { function ->
-        if (containsAsyncBlockedType(function.function.returnType)) {
-            result.add(
-                "${function.function.packageName}#${function.function.functionName}\n Async export does not support return type containing JSValue or ArrayBuffer in V1."
-            )
+        function.function.returnType?.let { returnType ->
+            validateAsyncExportTypeShape(returnType.toAsyncTypeShape())?.let { message ->
+                result.add(
+                    "${function.function.packageName}#${function.function.functionName}\n $message"
+                )
+            }
         }
         function.function.parameters.forEach { param ->
-            if (containsAsyncBlockedType(param.type)) {
+            validateAsyncExportTypeShape(param.type.toAsyncTypeShape())?.let { message ->
                 result.add(
-                    "${function.function.packageName}#${function.function.functionName}\n Async export does not support param type ${param.type} because V1 excludes JSValue and ArrayBuffer."
+                    "${function.function.packageName}#${function.function.functionName}\n $message"
                 )
             }
         }

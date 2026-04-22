@@ -22,6 +22,10 @@ size_t getTypeArrayLength(napi_env env, napi_value value);
 
 napi_typedarray_type getTypeArrayType(napi_env env, napi_value value);
 
+napi_value createExternalArrayBuffer(napi_env env, uint8_t *inputBuffer, long length);
+
+napi_value createExternalTypedArray(napi_env env, uint8_t *data, long count, napi_typedarray_type type);
+
 napi_value createArrayBuffer(napi_env env, uint8_t *inputBuffer, long length);
 
 napi_value createTypedArray(napi_env env, uint8_t *data, long count, napi_typedarray_type type);

@@ -98,6 +98,7 @@ struct Index {
           .fontWeight(FontWeight.Bold)
           .onClick(() => {
             console.log("ohos tid:"+process.tid + "pid:"+process.pid)
+
             let result: String = invoke<String>("testStringReturnString", "input")
             console.log("knoi-sample invoke testStringReturnString result " + result);
             result = invoke<String>("testVoidReturnString",)
@@ -161,6 +162,79 @@ struct Index {
             let data: ArrayBuffer = obj["data"]
             let dataInt32Buff: Int32Array = new Int32Array(data);
             console.log(`knoi-sample invoke testVoidReturnArrayBufferInMap result = ${dataInt32Buff[0]} ${dataInt32Buff[1]} ${dataInt32Buff[2]} ${dataInt32Buff[3]}`);
+
+            let sharedNativeBuffer: ArrayBuffer = invoke<ArrayBuffer>("testCreateNativeOwnedArrayBufferForExternal")
+            let sharedNativeBytes: Uint8Array = new Uint8Array(sharedNativeBuffer)
+            console.log(
+              `knoi-sample external_arraybuffer initial = ${sharedNativeBytes[0]} ${sharedNativeBytes[1]} ${sharedNativeBytes[2]} ${sharedNativeBytes[3]}`
+            )
+            let sharedNativeReturned: ArrayBuffer =
+              invoke<ArrayBuffer>("testMutateStoredNativeOwnedArrayBufferForExternal")
+            console.log(
+              `knoi-sample external_arraybuffer after Kotlin mutation = ${sharedNativeBytes[0]} ${sharedNativeBytes[1]} ${sharedNativeBytes[2]} ${sharedNativeBytes[3]} sameRef=${sharedNativeReturned === sharedNativeBuffer}`
+            )
+            if (
+              sharedNativeReturned === sharedNativeBuffer &&
+                sharedNativeBytes[0] === 51 &&
+                sharedNativeBytes[1] === 52 &&
+                sharedNativeBytes[2] === 53 &&
+                sharedNativeBytes[3] === 54
+            ) {
+              console.log("knoi-sample external_arraybuffer verification passed")
+            } else {
+              console.error("knoi-sample external_arraybuffer verification failed")
+            }
+
+            let ownershipInput: ArrayBuffer = new ArrayBuffer(4)
+            let ownershipInputBytes: Uint8Array = new Uint8Array(ownershipInput)
+            ownershipInputBytes[0] = 1
+            ownershipInputBytes[1] = 2
+            ownershipInputBytes[2] = 3
+            ownershipInputBytes[3] = 4
+            let jsOwnershipReport = invoke<Object>(
+              "testVerifyArrayBufferOwnershipOps",
+              ownershipInput
+            ) as Record<string, Object>
+            console.log(
+              "knoi-sample testVerifyArrayBufferOwnershipOps = " + JSON.stringify(jsOwnershipReport)
+            )
+            let jsEnsuredSameInstance: boolean = jsOwnershipReport["ensuredSameInstance"] as boolean
+            let jsDetachedSameInstance: boolean = jsOwnershipReport["detachedSameInstance"] as boolean
+            let jsOriginalBytes: Array<number> = jsOwnershipReport["originalBytes"] as Array<number>
+            let jsEnsuredBytes: Array<number> = jsOwnershipReport["ensuredBytes"] as Array<number>
+            let jsDetachedBytes: Array<number> = jsOwnershipReport["detachedBytes"] as Array<number>
+            if (
+              !jsEnsuredSameInstance &&
+                !jsDetachedSameInstance &&
+                jsOriginalBytes[0] === 1 &&
+                jsEnsuredBytes[0] === 101 &&
+                jsDetachedBytes[0] === 111
+            ) {
+              console.log("knoi-sample JS-backed ensureNativeOwned/toDetachedCopy verification passed")
+            } else {
+              console.error("knoi-sample JS-backed ensureNativeOwned/toDetachedCopy verification failed")
+            }
+
+            let nativeOwnershipReport = invoke<Object>(
+              "testVerifyNativeOwnedArrayBufferOwnershipOps"
+            ) as Record<string, Object>
+            console.log(
+              "knoi-sample testVerifyNativeOwnedArrayBufferOwnershipOps = " + JSON.stringify(nativeOwnershipReport)
+            )
+            let nativeEnsuredSameInstance: boolean = nativeOwnershipReport["ensuredSameInstance"] as boolean
+            let nativeDetachedSameInstance: boolean = nativeOwnershipReport["detachedSameInstance"] as boolean
+            let nativeSourceBytes: Array<number> = nativeOwnershipReport["sourceBytes"] as Array<number>
+            let nativeDetachedBytes: Array<number> = nativeOwnershipReport["detachedBytes"] as Array<number>
+            if (
+              nativeEnsuredSameInstance &&
+                !nativeDetachedSameInstance &&
+                nativeSourceBytes[0] === 91 &&
+                nativeDetachedBytes[0] === 131
+            ) {
+              console.log("knoi-sample native-owned ensureNativeOwned/toDetachedCopy verification passed")
+            } else {
+              console.error("knoi-sample native-owned ensureNativeOwned/toDetachedCopy verification failed")
+            }
           })
         Text("ArkTS call KN Async")
           .fontSize(40)
@@ -191,6 +265,113 @@ struct Index {
               })
               .catch((error: Error) => {
                 console.error("knoi-sample invokeRetPromise testAsyncJSCallbackReturnString error = " + error.message)
+              })
+
+            invokeRetPromise<Object>("testAsyncJSValueReturnJSValue", {
+              name: "ArkTS async object",
+              count: 7,
+              enabled: true
+            })
+              .then((result: Object) => {
+                console.log("knoi-sample invokeRetPromise testAsyncJSValueReturnJSValue result = " + JSON.stringify(result))
+              })
+              .catch((error: Error) => {
+                console.error("knoi-sample invokeRetPromise testAsyncJSValueReturnJSValue error = " + error.message)
+              })
+
+            invokeRetPromise<Object>("testAsyncVoidReturnJSValue")
+              .then((result: Object) => {
+                console.log("knoi-sample invokeRetPromise testAsyncVoidReturnJSValue result = " + JSON.stringify(result))
+              })
+              .catch((error: Error) => {
+                console.error("knoi-sample invokeRetPromise testAsyncVoidReturnJSValue error = " + error.message)
+              })
+
+            invokeRetPromise<Array<Object>>("testAsyncListJSValueReturnList", [
+              {
+                name: "ArkTS async list item 1",
+                count: 1,
+                enabled: true
+              },
+              {
+                name: "ArkTS async list item 2",
+                count: 2,
+                enabled: false
+              }
+            ])
+              .then((result: Array<Object>) => {
+                console.log("knoi-sample invokeRetPromise testAsyncListJSValueReturnList result = " + JSON.stringify(result))
+              })
+              .catch((error: Error) => {
+                console.error("knoi-sample invokeRetPromise testAsyncListJSValueReturnList error = " + error.message)
+              })
+
+            let asyncBuffer: ArrayBuffer = new ArrayBuffer(4)
+            let asyncBytes: Uint8Array = new Uint8Array(asyncBuffer)
+            asyncBytes[0] = 1
+            asyncBytes[1] = 2
+            asyncBytes[2] = 3
+            asyncBytes[3] = 4
+            invokeRetPromise<ArrayBuffer>("testAsyncArrayBufferReturnArrayBuffer", asyncBuffer)
+              .then((result: ArrayBuffer) => {
+                let resultBytes: Uint8Array = new Uint8Array(result)
+                console.log(`knoi-sample invokeRetPromise testAsyncArrayBufferReturnArrayBuffer result = ${resultBytes[0]} ${resultBytes[1]} ${resultBytes[2]} ${resultBytes[3]}`)
+              })
+              .catch((error: Error) => {
+                console.error("knoi-sample invokeRetPromise testAsyncArrayBufferReturnArrayBuffer error = " + error.message)
+              })
+            invokeRetPromise<ArrayBuffer>("testAsyncArrayBufferReturnArrayBuffer2", asyncBuffer)
+              .then((result: ArrayBuffer) => {
+                let resultBytes: Uint8Array = new Uint8Array(result)
+                console.log(`knoi-sample invokeRetPromise testAsyncArrayBufferReturnArrayBuffer2 result = ${resultBytes[0]} ${resultBytes[1]} ${resultBytes[2]} ${resultBytes[3]}`)
+              })
+              .catch((error: Error) => {
+                console.error("knoi-sample invokeRetPromise testAsyncArrayBufferReturnArrayBuffer2 error = " + error.message)
+              })
+
+            let nestedMapInput: Map<String, ArrayBuffer> = new Map();
+            let nestedBufferA: ArrayBuffer = new ArrayBuffer(4);
+            let nestedBytesA: Uint8Array = new Uint8Array(nestedBufferA);
+            nestedBytesA[0] = 10;
+            nestedBytesA[1] = 11;
+            nestedBytesA[2] = 12;
+            nestedBytesA[3] = 13;
+            let nestedBufferB: ArrayBuffer = new ArrayBuffer(4);
+            let nestedBytesB: Uint8Array = new Uint8Array(nestedBufferB);
+            nestedBytesB[0] = 20;
+            nestedBytesB[1] = 21;
+            nestedBytesB[2] = 22;
+            nestedBytesB[3] = 23;
+            nestedMapInput.set("first", nestedBufferA);
+            nestedMapInput.set("second", nestedBufferB);
+            invokeRetPromise<Map<String, ArrayBuffer>>("testAsyncMapArrayBufferReturnMap", nestedMapInput)
+              .then((result: Map<String, ArrayBuffer>) => {
+                let firstBytes: Uint8Array = new Uint8Array(result["first"])
+                let secondBytes: Uint8Array = new Uint8Array(result["second"])
+                console.log(`knoi-sample invokeRetPromise testAsyncMapArrayBufferReturnMap first = ${firstBytes[0]} ${firstBytes[1]} ${firstBytes[2]} ${firstBytes[3]}`)
+                console.log(`knoi-sample invokeRetPromise testAsyncMapArrayBufferReturnMap second = ${secondBytes[0]} ${secondBytes[1]} ${secondBytes[2]} ${secondBytes[3]}`)
+              })
+              .catch((error: Error) => {
+                console.error("knoi-sample invokeRetPromise testAsyncMapArrayBufferReturnMap error = " + error.message)
+              })
+          })
+        Text("Kotlin Multi Download")
+          .fontSize(40)
+          .fontWeight(FontWeight.Bold)
+          .onClick(() => {
+            console.log("knoi-sample invokeRetPromise testDownloadResourcePackagesInKotlin start")
+            invokeRetPromise<Object>("testDownloadResourcePackagesInKotlin")
+              .then((result: Object) => {
+                console.log(
+                  "knoi-sample invokeRetPromise testDownloadResourcePackagesInKotlin result = " +
+                    JSON.stringify(result)
+                )
+              })
+              .catch((error: Error) => {
+                console.error(
+                  "knoi-sample invokeRetPromise testDownloadResourcePackagesInKotlin error = " +
+                    error.message
+                )
               })
           })
         Text("KN call ArkTS")

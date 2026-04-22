@@ -27,7 +27,11 @@ ArrayBuffer is a wrapper for ArrayBuffer and TypedArray in JavaScript, allowing 
     int32Buffer[2] = 19
     int32Buffer[3] = 20
     // Create ArrayBuffer object - reinterpret required for non-uint8_tVar types, with napi_typedarray_type parameter
-    val arrayBufferInt32 = ArrayBuffer(int32Buffer.reinterpret(), 8, type = napi_typedarray_type.napi_int32_array)
+    val arrayBufferInt32 = ArrayBuffer(
+        int32Buffer.reinterpret(),
+        8L * Int.SIZE_BYTES,
+        type = napi_typedarray_type.napi_int32_array
+    )
     // arrayBufferInt32 can now be passed between method calls and service calls
     // Remember to release int32Buffer here
 ```
@@ -38,5 +42,5 @@ ArrayBuffer is a wrapper for ArrayBuffer and TypedArray in JavaScript, allowing 
      // Get binary pointer
      val ptr = arrayBuffer.getData<int32_tVar>()
      // Convert to byteArray (not recommended as it involves data copy)
-     val byteArray:ByteArray = ptr.readBytes(arrayBuffer.getCount())
+     val byteArray:ByteArray = ptr.readBytes(arrayBuffer.getByteLength().toInt())
 ```

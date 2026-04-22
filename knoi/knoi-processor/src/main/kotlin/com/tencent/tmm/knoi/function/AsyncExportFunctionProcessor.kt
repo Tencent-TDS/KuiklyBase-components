@@ -32,7 +32,7 @@ fun processAsyncExportFunction(
         return exportFunctionList
     }
     val errorList = checkAsyncFunctionSupportType(exportFunctionList)
-    assert(errorList.isEmpty()) {
+    check(errorList.isEmpty()) {
         errorList.toTypedArray().joinToString("\n")
     }
     val moduleName = options[OPTION_MODULE_NAME]!!
@@ -78,6 +78,8 @@ fun genAsyncExportFunctionList(
         FileSpec.builder("com.tencent.tmm.knoi.modules.${moduleName}", "AsyncExportFunctionRegister")
 
     registerFileSpecBuilder.addImport("com.tencent.tmm.knoi.definder", "bindAsync")
+    registerFileSpecBuilder.addImport("com.tencent.tmm.knoi.type", "JSValue")
+    registerFileSpecBuilder.addImport("com.tencent.tmm.knoi.type", "ArrayBuffer")
     exportFunctionList.forEach {
         registerFileSpecBuilder.addImport(
             it.function.packageName,

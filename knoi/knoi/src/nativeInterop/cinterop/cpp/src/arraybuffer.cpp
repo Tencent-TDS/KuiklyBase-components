@@ -1,5 +1,6 @@
 
 #include "arraybuffer.h"
+#include <cstdlib>
 
 bool isArrayBuffer(napi_env env, napi_value value) {
     bool isArrayBuffer;
@@ -55,6 +56,42 @@ size_t getTypeArrayLength(napi_env env, napi_value value) {
     void *data;
     napi_get_typedarray_info(env, value, &type, &length, &data, &buffer, &offset);
     return length;
+}
+
+void finalizeExternalArrayBuffer(napi_env env, void *finalizeData, void *finalizeHint) {
+    if (finalizeData != nullptr) {
+        free(finalizeData);
+    }
+}
+
+napi_value createExternalArrayBuffer(napi_env env, uint8_t *ptr, long length) {
+    napi_value arrayBuffer = nullptr;
+    napi_status status = napi_create_external_arraybuffer(
+        env,
+        ptr,
+        length,
+        finalizeExternalArrayBuffer,
+        nullptr,
+        &arrayBuffer
+    );
+    if (status != napi_ok) {
+        return nullptr;
+    }
+    return arrayBuffer;
+}
+
+napi_value createExternalTypedArray(napi_env env, uint8_t *data, long count, napi_typedarray_type typed) {
+    int length = count * getTypedArrayItemSize(typed);
+    napi_value arrayBuffer = createExternalArrayBuffer(env, data, length);
+    if (arrayBuffer == nullptr) {
+        return nullptr;
+    }
+    napi_value typedArray = nullptr;
+    napi_status status = napi_create_typedarray(env, typed, count, arrayBuffer, 0, &typedArray);
+    if (status != napi_ok) {
+        return nullptr;
+    }
+    return typedArray;
 }
 
 napi_value createArrayBuffer(napi_env env, uint8_t *ptr, long length) {

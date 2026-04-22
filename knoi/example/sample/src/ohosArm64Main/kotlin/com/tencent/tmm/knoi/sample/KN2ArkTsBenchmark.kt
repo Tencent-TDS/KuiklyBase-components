@@ -100,7 +100,11 @@ fun testService() {
     int32Buffer[3] = 20
     // 如非 uint8_tVar 需调用reinterpret，并传入 napi_typedarray_type
     val arrayBufferInt32 =
-        ArrayBuffer(int32Buffer.reinterpret(), 8, type = napi_typedarray_type.napi_int32_array)
+        ArrayBuffer(
+            int32Buffer.reinterpret(),
+            8L * Int.SIZE_BYTES,
+            type = napi_typedarray_type.napi_int32_array
+        )
     val int32Result = getTestServiceAApi().methodWithArrayBufferReturnArrayBuffer(arrayBufferInt32)
     if (int32Result != null) {
         val buffer = int32Result.getData<int32_tVar>()
@@ -385,7 +389,11 @@ fun testJSFunction() {
     int32Buffer[2] = 19
     int32Buffer[3] = 20
     val arrayBufferInt32 =
-        ArrayBuffer(int32Buffer.reinterpret(), 8, type = napi_typedarray_type.napi_int32_array)
+        ArrayBuffer(
+            int32Buffer.reinterpret(),
+            8L * Int.SIZE_BYTES,
+            type = napi_typedarray_type.napi_int32_array
+        )
     val arrayBufferInt32Result =
         getJSFunction("testArrayBufferInt32ReturnArrayBufferInt32ForKMM")?.invoke<ArrayBuffer>(
             arrayBufferInt32
