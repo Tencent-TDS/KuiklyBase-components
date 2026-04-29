@@ -1,6 +1,7 @@
 package com.tencent.tmm.knoi.sample
 
 import com.tencent.tmm.knoi.annotation.Hidden
+import com.tencent.tmm.knoi.annotation.KNMethodRetPromise
 import com.tencent.tmm.knoi.type.ArrayBuffer
 import com.tencent.tmm.knoi.type.JSValue
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -41,6 +42,18 @@ interface TestServiceBApi {
     // 无参数调用
     fun methodWithUnit()
 
+    // Promise 基础类型
+    @KNMethodRetPromise
+    fun methodWithPromiseString(a: String): String
+
+    // Promise JSValue 输入输出
+    @KNMethodRetPromise
+    fun methodWithPromiseJSValueReturnJSValue(a: JSValue): JSValue
+
+    // Promise 无参数返回 JSValue
+    @KNMethodRetPromise
+    fun methodWithPromiseUnitReturnJSValue(): JSValue
+
     // 传入任意 JS 类型，返回任意 JS 类型
     fun methodWithJSValueReturnJSValue(a: JSValue): JSValue
 
@@ -48,10 +61,19 @@ interface TestServiceBApi {
     @OptIn(ExperimentalForeignApi::class)
     fun methodWithArrayBufferReturnArrayBuffer(buffer: ArrayBuffer): ArrayBuffer
 
+    // Promise 二进制数据输入输出
+    @OptIn(ExperimentalForeignApi::class)
+    @KNMethodRetPromise
+    fun methodWithPromiseArrayBufferReturnArrayBuffer(buffer: ArrayBuffer): ArrayBuffer
+
     // 多参数
     fun method3Params(a: String, b: Int, c: JSValue): JSValue
 
     fun methodWithMultiTypeMap(map: Map<String, Any?>): Map<String, Any?>
+
+    // Promise Map 容器类型输入输出
+    @KNMethodRetPromise
+    fun methodWithPromiseMapReturnMap(map: Map<String, Any?>): Map<String, Any?>
 
     fun methodWithDefaultValueInSubType(a: Int = 42, b: String = "default value in sub type")
 

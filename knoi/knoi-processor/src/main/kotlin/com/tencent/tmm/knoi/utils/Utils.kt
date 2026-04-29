@@ -109,6 +109,23 @@ fun checkAsyncFunctionSupportType(functionList: List<AsyncExportFunction>): Muta
     return result
 }
 
+fun checkAsyncServiceSupportType(functionList: List<FunctionInfo>): MutableList<String> {
+    val result = mutableListOf<String>()
+    functionList.filter { it.retPromise }.forEach { function ->
+        function.returnType?.let { returnType ->
+            validateAsyncExportTypeShape(returnType.toAsyncTypeShape())?.let { message ->
+                result.add("${function.packageName}#${function.functionName}\n $message")
+            }
+        }
+        function.parameters.forEach { param ->
+            validateAsyncExportTypeShape(param.type.toAsyncTypeShape())?.let { message ->
+                result.add("${function.packageName}#${function.functionName}\n $message")
+            }
+        }
+    }
+    return result
+}
+
 fun <T> getAnnotationValueByKey(
     annotation: KSAnnotated, annotationName: String, key: String, fallback: T
 ): T {

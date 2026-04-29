@@ -11,7 +11,8 @@ data class FunctionInfo(
     val packageName: String,
     val functionName: String,
     val parameters: List<Param>,
-    val returnType: KSType?
+    val returnType: KSType?,
+    val retPromise: Boolean = false
 ) {
     override fun toString(): String {
         return "ExportFunction(packageName='$packageName', functionName='$functionName', parameters=$parameters, returnType='$returnType')"

@@ -17,6 +17,12 @@ import router from '@ohos.router';
 import { display } from '@kit.ArkUI'
 import TestServiceAInWorkerImpl from '../TestServiceAInWorkerImpl'
 
+interface PromiseServiceObjectPayload {
+  name: string
+  count: number
+  enabled: boolean
+}
+
 @Entry
 @Component
 struct Index {
@@ -417,6 +423,32 @@ struct Index {
             console.log("knoi-sample TestServiceB methodWithIntReturnInt result = " + intResult)
             let strResult = serviceB.methodWithStringReturnString("param in ArkTS")
             console.log("knoi-sample TestServiceB methodWithStringReturnString result = " + strResult)
+            serviceB.methodWithPromiseString("promise param in ArkTS")
+              .then((promiseResult: string) => {
+                console.log("knoi-sample TestServiceB methodWithPromiseString result = " + promiseResult)
+              })
+              .catch((error: Error) => {
+                console.error("knoi-sample TestServiceB methodWithPromiseString error = " + error.message)
+              })
+            let promiseJSValueInput: PromiseServiceObjectPayload = {
+              name: "arkts",
+              count: 1,
+              enabled: true
+            }
+            serviceB.methodWithPromiseJSValueReturnJSValue(promiseJSValueInput)
+              .then((promiseResult: Object) => {
+                console.log("knoi-sample TestServiceB methodWithPromiseJSValueReturnJSValue result = " + JSON.stringify(promiseResult))
+              })
+              .catch((error: Error) => {
+                console.error("knoi-sample TestServiceB methodWithPromiseJSValueReturnJSValue error = " + error.message)
+              })
+            serviceB.methodWithPromiseUnitReturnJSValue()
+              .then((promiseResult: Object) => {
+                console.log("knoi-sample TestServiceB methodWithPromiseUnitReturnJSValue result = " + JSON.stringify(promiseResult))
+              })
+              .catch((error: Error) => {
+                console.error("knoi-sample TestServiceB methodWithPromiseUnitReturnJSValue error = " + error.message)
+              })
             let longResult = serviceB.methodWithLongReturnLong(42)
             console.log("knoi-sample TestServiceB methodWithLongReturnLong result = " + longResult)
             let doubleResult = serviceB.methodWithDoubleReturnDouble(42.0)
@@ -435,6 +467,32 @@ struct Index {
             console.log("knoi-sample TestServiceB methodWithMapReturnMap result = " + objResult)
             serviceB.methodWithUnit()
             console.log("knoi-sample TestServiceB methodWithUnit result")
+            let promiseBuffer: ArrayBuffer = new ArrayBuffer(8)
+            let promiseBufferArray: Uint8Array = new Uint8Array(promiseBuffer)
+            promiseBufferArray[0] = 1
+            promiseBufferArray[1] = 2
+            promiseBufferArray[2] = 3
+            promiseBufferArray[3] = 4
+            serviceB.methodWithPromiseArrayBufferReturnArrayBuffer(promiseBuffer)
+              .then((promiseResult: ArrayBuffer) => {
+                let bytes = Array.from(new Uint8Array(promiseResult)).join(",")
+                console.log("knoi-sample TestServiceB methodWithPromiseArrayBufferReturnArrayBuffer result = " + bytes)
+              })
+              .catch((error: Error) => {
+                console.error("knoi-sample TestServiceB methodWithPromiseArrayBufferReturnArrayBuffer error = " + error.message)
+              })
+            let promiseMapInput: PromiseServiceObjectPayload = {
+              name: "promise-map",
+              count: 2,
+              enabled: false
+            }
+            serviceB.methodWithPromiseMapReturnMap(promiseMapInput)
+              .then((promiseResult: Object) => {
+                console.log("knoi-sample TestServiceB methodWithPromiseMapReturnMap result = " + JSON.stringify(promiseResult))
+              })
+              .catch((error: Error) => {
+                console.error("knoi-sample TestServiceB methodWithPromiseMapReturnMap error = " + error.message)
+              })
             let func: Function = serviceB.methodWithCallbackReturnCallback((a: string) => {
               console.log("knoi-sample TestServiceB methodWithCallbackReturnCallback result = " + a)
             })
