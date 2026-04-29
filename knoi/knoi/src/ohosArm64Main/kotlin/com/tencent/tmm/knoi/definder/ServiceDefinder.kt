@@ -126,44 +126,56 @@ fun <T> bindServiceProxy(name: String, proxy: T) {
 internal fun forwardServiceCall(env: napi_env?, callbackInfo: napi_callback_info?): napi_value? {
     injectEnv(env)
     val params = getCbInfoWithSize(env, callbackInfo, 3) ?: error("unknown params.")
-    if (params[0] == null || params[1] == null || params[2] == null) {
-        return null
-    }
-    val serviceNameJSValue = JSValue(params[0])
-    if (!serviceNameJSValue.isString() || serviceNameJSValue.toKString().isNullOrEmpty()) {
-        throw IllegalArgumentException("The first parameter must be the service name.")
-    }
+    try {
+        if (params[0] == null || params[1] == null || params[2] == null) {
+            return null
+        }
+        val serviceNameJSValue = JSValue(params[0])
+        if (!serviceNameJSValue.isString() || serviceNameJSValue.toKString().isNullOrEmpty()) {
+            throw IllegalArgumentException("The first parameter must be the service name.")
+        }
 
-    val proxyJSValue = JSValue(params[1])
-    val methodName = jsValueToKTValue(getEnv(), params[2], String::class)
-    if (methodName !is String) {
-        throw IllegalArgumentException("The third parameter must be the method name.")
-    }
+        val proxyJSValue = JSValue(params[1])
+        val methodName = jsValueToKTValue(getEnv(), params[2], String::class)
+        if (methodName !is String) {
+            throw IllegalArgumentException("The third parameter must be the method name.")
+        }
 
-    val serviceName = serviceNameJSValue.toKString()!!
-    val invokable = serviceProviderRegister.getInvokable(proxyJSValue, serviceName)
-    val paramsTypes = invokable.getParamsTypeList(methodName)
-    val expectedSize = invokable.getMinParamsSize(methodName)
+        val serviceName = serviceNameJSValue.toKString()!!
+        val invokable = serviceProviderRegister.getInvokable(proxyJSValue, serviceName)
+        val paramsTypes = invokable.getParamsTypeList(methodName)
+        val expectedSize = invokable.getMinParamsSize(methodName)
 
-    if (invokable.isRetPromise(methodName)) {
-        return forwardPromiseServiceCall(env, callbackInfo, serviceName, methodName, invokable, paramsTypes, expectedSize)
-    }
+        if (invokable.isRetPromise(methodName)) {
+            return forwardPromiseServiceCall(
+                env,
+                callbackInfo,
+                serviceName,
+                methodName,
+                invokable,
+                paramsTypes,
+                expectedSize
+            )
+        }
 
-    val paramsValue =
-        convertJSCallbackInfoToKTParamList<Any>(env, callbackInfo, paramsTypes.toList(), 3)
-    if (paramsValue.size < expectedSize) {
-        throw IllegalArgumentException(
-            "callService method = $methodName " + "params length error: expect $expectedSize actual ${paramsValue.size}"
-        )
-    }
-    val transformParamValues = paramsValue.mapIndexed { index: Int, param: Any? ->
-        return@mapIndexed safeCaseNumberType(param, paramsTypes[index])
-    }.toTypedArray()
-    return trace("forwardServiceCall $serviceName#$methodName") {
-        debug("callService $serviceName#$methodName : params = ${transformParamValues.contentToString()}")
-        val result = invokable.invoke(methodName, *transformParamValues)
-        debug("callService $serviceName#$methodName : result = $result")
-        ktValueToJSValue(env, result, invokable.getReturnType(methodName))
+        val paramsValue =
+            convertJSCallbackInfoToKTParamList<Any>(env, callbackInfo, paramsTypes.toList(), 3)
+        if (paramsValue.size < expectedSize) {
+            throw IllegalArgumentException(
+                "callService method = $methodName " + "params length error: expect $expectedSize actual ${paramsValue.size}"
+            )
+        }
+        val transformParamValues = paramsValue.mapIndexed { index: Int, param: Any? ->
+            return@mapIndexed safeCaseNumberType(param, paramsTypes[index])
+        }.toTypedArray()
+        return trace("forwardServiceCall $serviceName#$methodName") {
+            debug("callService $serviceName#$methodName : params = ${transformParamValues.contentToString()}")
+            val result = invokable.invoke(methodName, *transformParamValues)
+            debug("callService $serviceName#$methodName : result = $result")
+            ktValueToJSValue(env, result, invokable.getReturnType(methodName))
+        }
+    } finally {
+        free(params)
     }
 }
 
@@ -290,25 +302,29 @@ internal fun completePromiseServiceCall(
 internal fun registerService(env: napi_env?, callbackInfo: napi_callback_info?): napi_value? {
     injectEnv(env)
     val params = getCbInfoWithSize(env, callbackInfo, 3) ?: error("unknown params.")
-    if (params[0] == null || params[1] == null || params[2] == null) {
-        return null
-    }
-    val nameJSValue = JSValue(params[0])
-    if (!nameJSValue.isString() || nameJSValue.toKString().isNullOrEmpty()) {
-        throw IllegalArgumentException("The first parameter must be the service name.")
-    }
-    val serviceName = nameJSValue.toKString()!!
+    try {
+        if (params[0] == null || params[1] == null || params[2] == null) {
+            return null
+        }
+        val nameJSValue = JSValue(params[0])
+        if (!nameJSValue.isString() || nameJSValue.toKString().isNullOrEmpty()) {
+            throw IllegalArgumentException("The first parameter must be the service name.")
+        }
+        val serviceName = nameJSValue.toKString()!!
 
-    val singletonJSValue = JSValue(params[1])
-    if (!singletonJSValue.isBoolean()) {
-        throw IllegalArgumentException("The second parameter must be Boolean.")
+        val singletonJSValue = JSValue(params[1])
+        if (!singletonJSValue.isBoolean()) {
+            throw IllegalArgumentException("The second parameter must be Boolean.")
+        }
+        val type = typeOf(env, params[2])
+        if (type != napi_valuetype.napi_object && type != napi_valuetype.napi_function) {
+            throw IllegalArgumentException("serviceName $serviceName The third parameter must be a function or object.")
+        }
+        val isSingleton = singletonJSValue.toBoolean()
+        info("registerService service = $serviceName  isSingleton = $isSingleton")
+        serviceProxyRegister.register(env, serviceName, isSingleton, params[2])
+        return null
+    } finally {
+        free(params)
     }
-    val type = typeOf(env, params[2])
-    if (type != napi_valuetype.napi_object && type != napi_valuetype.napi_function) {
-        throw IllegalArgumentException("serviceName $serviceName The third parameter must be a function or object.")
-    }
-    val isSingleton = singletonJSValue.toBoolean()
-    info("registerService service = $serviceName  isSingleton = $isSingleton")
-    serviceProxyRegister.register(env, serviceName, isSingleton, params[2])
-    return null
 }
