@@ -71,6 +71,54 @@ getTestServiceB().method1("param1")
 getService<TestServiceB>("TestServiceB").method1("param1")
 ```
 
+##### ServiceProvider `retPromise` 方法
+
+当 Kotlin 服务方法需要以 `Promise<R>` 的形式暴露给 ArkTS 时，请在该方法上标注 `@KNMethodRetPromise`。如果服务是基于接口实现的，可以把注解标在接口方法上，处理器会沿 override 链识别它。
+
+示例来自 `example/sample-api/src/ohosArm64Main/kotlin/com/tencent/tmm/knoi/sample/TestServiceBApi.kt` 与 `example/sample/src/ohosArm64Main/kotlin/com/tencent/tmm/knoi/sample/TestServiceB.kt`：
+
+```Kotlin
+interface TestServiceBApi {
+    @KNMethodRetPromise
+    fun methodWithPromiseString(a: String): String
+
+    @KNMethodRetPromise
+    fun methodWithPromiseJSValueReturnJSValue(a: JSValue): JSValue
+
+    @KNMethodRetPromise
+    fun methodWithPromiseUnitReturnJSValue(): JSValue
+
+    @KNMethodRetPromise
+    fun methodWithPromiseArrayBufferReturnArrayBuffer(buffer: ArrayBuffer): ArrayBuffer
+
+    @KNMethodRetPromise
+    fun methodWithPromiseMapReturnMap(map: Map<String, Any?>): Map<String, Any?>
+}
+
+@ServiceProvider(bind = TestServiceBApi::class, singleton = false)
+open class TestServiceB : TestServiceBApi {
+    override fun methodWithPromiseString(a: String): String {
+        return "$a promise modify from KMM"
+    }
+}
+```
+
+规格说明：
+
+- 只有标注了 `@KNMethodRetPromise` 的方法会被导出为 Promise 返回的服务方法；未标注的方法仍然保持同步调用。
+- 生成后的 ArkTS 服务接口会将这些方法的签名从 `R` 自动改为 `Promise<R>`。
+- 支持 override 链追踪。对基于接口的服务，只标注接口方法即可。
+- 异步参数和返回值支持的类型为 `Unit`、`Boolean`、`Int`、`String`、`Double`、`Long`、`Array`、`Function`、`List`、`ArrayList`、`Map`、`HashMap`、`JSValue`、`ArrayBuffer`。
+- 异步服务方法的类型校验与异步导出函数一致，按相同的受支持类型集合做递归校验。
+- Kotlin 抛出的异常会在 ArkTS 侧表现为 `Promise reject`。
+- 异步服务方法返回的 `JSValue`，以及容器中的嵌套 `JSValue`，必须保持在发起调用的 JS 线程上。
+
+不支持的场景：
+
+- 不支持未纳入转换集合的参数或返回值类型，例如 `KClass`，或未被支持的自定义类。
+- 未标注 `@KNMethodRetPromise` 却期望生成 Promise 调用；处理器会继续按同步方法处理。
+- 不支持返回在其他 JS 线程创建的 `JSValue`；此时运行时会将 `Promise` 置为 reject。
+
 ### 详细例子🌰
 
 ##### Kotlin 调用 ArkTS 

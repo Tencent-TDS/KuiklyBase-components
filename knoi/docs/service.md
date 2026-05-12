@@ -70,6 +70,54 @@ getTestServiceB().method1("param1")
 getService<TestServiceB>("TestServiceB").method1("param1")
 ```
 
+##### `retPromise` for ServiceProvider Methods
+
+When a Kotlin service method should be exposed to ArkTS as `Promise<R>`, mark that method with `@KNMethodRetPromise`. If the service implements an interface, the annotation can be placed on the interface method and the processor will track it through overrides.
+
+Examples from `example/sample-api/src/ohosArm64Main/kotlin/com/tencent/tmm/knoi/sample/TestServiceBApi.kt` and `example/sample/src/ohosArm64Main/kotlin/com/tencent/tmm/knoi/sample/TestServiceB.kt`:
+
+```Kotlin
+interface TestServiceBApi {
+    @KNMethodRetPromise
+    fun methodWithPromiseString(a: String): String
+
+    @KNMethodRetPromise
+    fun methodWithPromiseJSValueReturnJSValue(a: JSValue): JSValue
+
+    @KNMethodRetPromise
+    fun methodWithPromiseUnitReturnJSValue(): JSValue
+
+    @KNMethodRetPromise
+    fun methodWithPromiseArrayBufferReturnArrayBuffer(buffer: ArrayBuffer): ArrayBuffer
+
+    @KNMethodRetPromise
+    fun methodWithPromiseMapReturnMap(map: Map<String, Any?>): Map<String, Any?>
+}
+
+@ServiceProvider(bind = TestServiceBApi::class, singleton = false)
+open class TestServiceB : TestServiceBApi {
+    override fun methodWithPromiseString(a: String): String {
+        return "$a promise modify from KMM"
+    }
+}
+```
+
+Specification:
+
+- Only methods marked with `@KNMethodRetPromise` are exported as Promise-returning service methods; unmarked methods remain synchronous.
+- Generated ArkTS service interfaces change the marked method signatures from `R` to `Promise<R>`.
+- Override lookup is supported. For interface-based services, annotating the interface method is sufficient.
+- Supported async parameter and return types are `Unit`, `Boolean`, `Int`, `String`, `Double`, `Long`, `Array`, `Function`, `List`, `ArrayList`, `Map`, `HashMap`, `JSValue`, and `ArrayBuffer`.
+- Async service type checking uses the same recursive supported-type set as async exported functions.
+- Kotlin exceptions reject the returned `Promise`.
+- `JSValue` and nested `JSValue` values returned from async service methods must remain on the invoking JS thread.
+
+Not supported:
+
+- Unsupported parameter or return types, such as `KClass` or arbitrary custom classes that are not in the supported conversion set.
+- Expecting Promise behavior without `@KNMethodRetPromise`; the processor will keep that method synchronous.
+- Returning a `JSValue` created on a different JS thread; runtime will reject the `Promise` in this case.
+
 ### Detailed Examples 🌰
 
 ##### Kotlin Calling ArkTS
