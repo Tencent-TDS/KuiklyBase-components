@@ -1,9 +1,11 @@
 package com.tencent.tmm.knoi.sample
 
 import com.tencent.tmm.knoi.annotation.Hidden
+import com.tencent.tmm.knoi.getCurrentAsyncInvokeOwnerTid
 import com.tencent.tmm.knoi.annotation.ServiceProvider
 import com.tencent.tmm.knoi.converter.ktValueToJSValue
 import com.tencent.tmm.knoi.getEnv
+import com.tencent.tmm.knoi.getTid
 import com.tencent.tmm.knoi.logger.info
 import com.tencent.tmm.knoi.type.ArrayBuffer
 import com.tencent.tmm.knoi.type.JSValue
@@ -101,6 +103,37 @@ open class TestServiceB : TestServiceBApi {
         info("TestServiceB methodWithUnit")
     }
 
+    // Promise 基础类型
+    override fun methodWithPromiseString(a: String): String {
+        info("TestServiceB methodWithPromiseString")
+        return "$a promise modify from KMM"
+    }
+
+    // Promise JSValue 输入输出
+    override fun methodWithPromiseJSValueReturnJSValue(a: JSValue): JSValue {
+        info("TestServiceB methodWithPromiseJSValueReturnJSValue")
+        val tid = a.tid
+        val result = JSValue.createJSObject(tid = tid)
+        result["original"] = a
+        result["type"] = JSValue.createJSValue("service-async-jsvalue", tid = tid)
+        result["message"] = JSValue.createJSValue("processed in Promise service method", tid = tid)
+        if (a.isObject() && !a.isArrayType() && !a.isArrayBuffer()) {
+            result["name"] = JSValue.createJSValue(a["name"]?.toKString().orEmpty() + "-service", tid = tid)
+        }
+        return result
+    }
+
+    // Promise 无参数返回 JSValue
+    override fun methodWithPromiseUnitReturnJSValue(): JSValue {
+        info("TestServiceB methodWithPromiseUnitReturnJSValue")
+        val ownerTid = getCurrentAsyncInvokeOwnerTid() ?: getTid()
+        val result = JSValue.createJSObject(tid = ownerTid)
+        result["type"] = JSValue.createJSValue("service-async-no-input-jsvalue", tid = ownerTid)
+        result["ownerTid"] = JSValue.createJSValue(ownerTid, tid = ownerTid)
+        result["message"] = JSValue.createJSValue("created from Promise service method", tid = ownerTid)
+        return result
+    }
+
     // 传入任意 JS 类型，返回任意 JS 类型
     override fun methodWithJSValueReturnJSValue(a: JSValue): JSValue {
         val arrayJSValue = a["array"]
@@ -125,6 +158,18 @@ open class TestServiceB : TestServiceBApi {
         return buffer
     }
 
+    // Promise 二进制数据输入输出
+    @OptIn(ExperimentalForeignApi::class)
+    override fun methodWithPromiseArrayBufferReturnArrayBuffer(buffer: ArrayBuffer): ArrayBuffer {
+        info("knoi-sample methodWithPromiseArrayBufferReturnArrayBuffer")
+        val bufferArray = buffer.getData<uint8_tVar>()
+        bufferArray?.set(0, 9u)
+        bufferArray?.set(1, 8u)
+        bufferArray?.set(2, 7u)
+        bufferArray?.set(3, 6u)
+        return buffer
+    }
+
     // 多参数
     override fun method3Params(a: String, b: Int, c: JSValue): JSValue {
         return c
@@ -136,6 +181,14 @@ open class TestServiceB : TestServiceBApi {
         var function = map["callback"] as (Array<JSValue>) -> String
         var obj = map["object"] as Map<String, *>
         return map
+    }
+
+    // Promise Map 容器类型输入输出
+    override fun methodWithPromiseMapReturnMap(map: Map<String, Any?>): Map<String, Any?> {
+        val result = map.toMutableMap()
+        result["promiseProcessed"] = true
+        result["source"] = "TestServiceB"
+        return result
     }
 
     override fun methodWithDefaultValueInSubType(a: Int, b: String) {

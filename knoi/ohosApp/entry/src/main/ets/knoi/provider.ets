@@ -105,13 +105,23 @@ export interface TestServiceB {
 
    methodWithUnit(): void;
 
+   methodWithPromiseString(a: string): Promise<string>;
+
+   methodWithPromiseJSValueReturnJSValue(a: object): Promise<object>;
+
+   methodWithPromiseUnitReturnJSValue(): Promise<object>;
+
    methodWithJSValueReturnJSValue(a: object): object;
 
    methodWithArrayBufferReturnArrayBuffer(buffer: ArrayBuffer): ArrayBuffer;
 
+   methodWithPromiseArrayBufferReturnArrayBuffer(buffer: ArrayBuffer): Promise<ArrayBuffer>;
+
    method3Params(a: string, b: number, c: object): object;
 
    methodWithMultiTypeMap(map: object): object;
+
+   methodWithPromiseMapReturnMap(map: object): Promise<object>;
 
    methodWithDefaultValueInSubType(a?: number, b?: string): void;
 

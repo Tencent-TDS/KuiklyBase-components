@@ -4,6 +4,7 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ANY
+import com.squareup.kotlinpoet.BOOLEAN
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.INT
@@ -22,6 +23,7 @@ import com.tencent.tmm.knoi.function.Param
 import com.tencent.tmm.knoi.utils.isOhosArm64
 import com.tencent.tmm.knoi.utils.OPTION_MODULE_NAME
 import com.tencent.tmm.knoi.utils.capitalizeName
+import com.tencent.tmm.knoi.utils.checkAsyncServiceSupportType
 import com.tencent.tmm.knoi.utils.checkFunctionSupportType
 import kotlin.reflect.KClass
 
@@ -32,6 +34,7 @@ fun processServiceProvider(
     val errorList = mutableListOf<String>()
     serviceInfoList.forEach {
         errorList.addAll(checkFunctionSupportType(it.functionList))
+        errorList.addAll(checkAsyncServiceSupportType(it.functionList))
     }
     serviceInfoList.forEach {
         if (!it.declaration.modifiers.contains(Modifier.OPEN) || it.declaration.modifiers.contains(
@@ -128,9 +131,31 @@ fun genServiceProviderClass(serviceInfo: ServiceInfo): TypeSpec {
         .superclass(serviceInfo.clazzName.toTypeName()).addSuperinterface(Invokable::class)
     serviceProviderTypeSpec.addFunction(genGetReturnTypeFuncSpec(serviceInfo))
     serviceProviderTypeSpec.addFunction(genGetParamTypeListFuncSpec(serviceInfo))
+    serviceProviderTypeSpec.addFunction(genIsRetPromiseFunSpec(serviceInfo))
     serviceProviderTypeSpec.addFunction(genInvokeFuncSpec(serviceInfo))
     serviceProviderTypeSpec.addFunction(genMinParamsSizeFunSpec(serviceInfo))
     return serviceProviderTypeSpec.build()
+}
+
+fun genIsRetPromiseFunSpec(serviceInfo: ServiceInfo): FunSpec {
+    val func = FunSpec.builder("isRetPromise").addModifiers(KModifier.OVERRIDE)
+    func.addParameter("method", String::class)
+    var totalCode = ""
+    serviceInfo.functionList.forEach {
+        totalCode += "|    \"${it.functionName}\" -> ${it.retPromise}\n"
+    }
+    func.addCode(
+        """
+        |return when (method) {
+            $totalCode
+        |    else -> {
+        |        throw IllegalArgumentException("${serviceInfo.serviceName}#${'$'}method not found.")
+        |    }
+        |}
+        |""".trimMargin()
+    )
+    func.returns(BOOLEAN)
+    return func.build()
 }
 
 fun genMinParamsSizeFunSpec(serviceInfo: ServiceInfo): FunSpec {

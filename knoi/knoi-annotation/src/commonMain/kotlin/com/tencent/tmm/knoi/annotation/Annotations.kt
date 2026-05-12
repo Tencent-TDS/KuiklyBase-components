@@ -10,6 +10,9 @@ annotation class KNExport(val name: String = "")
 @Target(AnnotationTarget.FUNCTION)
 annotation class KNExportRetPromise(val name: String = "")
 
+@Target(AnnotationTarget.FUNCTION)
+annotation class KNMethodRetPromise()
+
 @Target(AnnotationTarget.CLASS)
 annotation class ServiceConsumer(val name: String = "")
 

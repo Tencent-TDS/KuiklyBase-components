@@ -12,6 +12,8 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
+import com.tencent.tmm.knoi.annotation.KNMethodRetPromise
+import com.tencent.tmm.knoi.annotation.ServiceProvider
 import com.tencent.tmm.knoi.function.FunctionInfo
 import com.tencent.tmm.knoi.function.Param
 import com.tencent.tmm.knoi.function.parseFunctionsList
@@ -87,16 +89,37 @@ fun parseServiceInfoList(resolver: Resolver, annotationKClass: KClass<out Any>):
         val isSingleton = getAnnotationValueByKey(it, annotationName, "singleton", false)
         val bind: KSType? = getAnnotationValueByKey(it, annotationName, "bind", null)
 
+        val functionList = parseFunctionsList(
+            it,
+            trackMethodRetPromise = annotationKClass == ServiceProvider::class
+        )
         val serviceInfo = ServiceInfo(
-            serviceName, it.asStarProjectedType(), packageName, parseFunctionsList(it), it, isSingleton, bind
+            serviceName, it.asStarProjectedType(), packageName, functionList, it, isSingleton, bind
         )
         serviceInfos.add(serviceInfo)
     }
     return serviceInfos
 }
 
+private fun hasMethodRetPromise(functionDeclaration: KSFunctionDeclaration): Boolean {
+    val annotationName = KNMethodRetPromise::class.qualifiedName!!
+    var currentDeclaration: KSFunctionDeclaration? = functionDeclaration
+    while (currentDeclaration != null) {
+        val hasAnnotation = currentDeclaration.annotations.any { annotation ->
+            annotation.annotationType.resolve().declaration.qualifiedName?.asString() == annotationName
+        }
+        if (hasAnnotation) {
+            return true
+        }
+        currentDeclaration = currentDeclaration.findOverridee() as? KSFunctionDeclaration
+    }
+    return false
+}
 
-fun parseFunctionInfo(functionDeclaration: KSFunctionDeclaration): FunctionInfo {
+fun parseFunctionInfo(
+    functionDeclaration: KSFunctionDeclaration,
+    trackMethodRetPromise: Boolean = false
+): FunctionInfo {
     val functionName = functionDeclaration.simpleName.asString()
     val parameterList = mutableListOf<Param>()
     functionDeclaration.parameters.forEachIndexed { index, parameter ->
@@ -115,7 +138,9 @@ fun parseFunctionInfo(functionDeclaration: KSFunctionDeclaration): FunctionInfo 
         packageName,
         functionName,
         parameterList,
-        functionDeclaration.returnType?.let { getRealKSType(it) })
+        functionDeclaration.returnType?.let { getRealKSType(it) },
+        retPromise = trackMethodRetPromise && hasMethodRetPromise(functionDeclaration)
+    )
 }
 
 fun getKTTypeName(returnType: KSType?, toClassName: Boolean = true): TypeName {

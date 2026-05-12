@@ -45,12 +45,20 @@ fun genTypeScriptInterface(name: String, functionList: List<FunctionInfo>): Stri
         }
         paramsStr
     }
+    val genReturnFun = { function: FunctionInfo ->
+        val jsType = getJSTypeByKsType(function.returnType)
+        if (function.retPromise) {
+            "Promise<$jsType>"
+        } else {
+            jsType
+        }
+    }
     return """
         |export interface $name {
             ${
         functionList.joinToString(separator = "") {
             """
-            |   ${it.functionName}(${genParamsFun(it)}): ${getJSTypeByKsType(it.returnType)};
+            |   ${it.functionName}(${genParamsFun(it)}): ${genReturnFun(it)};
             |"""
         }
     }

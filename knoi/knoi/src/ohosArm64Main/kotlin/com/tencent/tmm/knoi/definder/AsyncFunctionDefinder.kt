@@ -126,7 +126,7 @@ private fun buildAsyncFunctionParams(
     }
 }
 
-private fun jsValueToAsyncKTValue(
+internal fun jsValueToAsyncKTValue(
     env: napi_env?,
     value: napi_value?,
     kType: KClass<out Any>
@@ -142,7 +142,7 @@ private fun jsValueToAsyncKTValue(
     return normalizeAsyncInputValue(converted)
 }
 
-private fun ktValueToAsyncJSValue(
+internal fun ktValueToAsyncJSValue(
     env: napi_env?,
     value: Any?,
     clazz: KClass<out Any>,
@@ -165,7 +165,7 @@ private fun ktValueToAsyncJSValue(
     }
 }
 
-private fun normalizeAsyncInputValue(value: Any?): Any? {
+internal fun normalizeAsyncInputValue(value: Any?): Any? {
     return when (value) {
         null -> null
         is List<*> -> value.map { normalizeAsyncInputValue(it) }
@@ -175,7 +175,7 @@ private fun normalizeAsyncInputValue(value: Any?): Any? {
     }
 }
 
-private fun normalizeAsyncOutputValue(value: Any?, ownerTid: Int): Any? {
+internal fun normalizeAsyncOutputValue(value: Any?, ownerTid: Int): Any? {
     return when (value) {
         null -> null
         is JSValue -> {
@@ -218,7 +218,7 @@ internal fun forwardInvokeRetPromise(env: napi_env?, callbackInfo: napi_callback
     }
 }
 
-private fun createAsyncThrowableValue(env: napi_env?, throwable: Throwable?): napi_value? {
+internal fun createAsyncThrowableValue(env: napi_env?, throwable: Throwable?): napi_value? {
     val message = throwable?.message ?: throwable?.toString() ?: "Unknown async error"
     return createError(env, message)
 }
