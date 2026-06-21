@@ -16,6 +16,8 @@
  */
 
 #include "curl_wrapper.h"
+#include <algorithm>
+#include <cctype>
 #include <string>
 #include "curl/curl.h"
 #include "log/curl_log.h"
@@ -188,8 +190,13 @@ class CurlClient {
         int size = headers->size;
         int postBodyLen = request.postBodyLen;
         const char *postBody = request.postBody;
-        logI(log_tag_, "libcurl ver:" + curlVer + ", request url:" + url + ", header size:" + std::to_string(size)
-            + ", timeout:" + std::to_string(timeout));
+        std::string method = request.method == nullptr ? "" : request.method;
+        if (method.empty()) {
+            method = postBodyLen > 0 && postBody != nullptr ? "POST" : "GET";
+        }
+        std::transform(method.begin(), method.end(), method.begin(), ::toupper);
+        logI(log_tag_, "libcurl ver:" + curlVer + ", request method:" + method + ", request url:" + url
+            + ", header size:" + std::to_string(size) + ", timeout:" + std::to_string(timeout));
 
         // 拼接 Header
         for (int i = 0; i < size; i++) {
@@ -247,12 +254,19 @@ class CurlClient {
         curl_easy_setopt(curl_, CURLOPT_XFERINFODATA, this);
         curl_easy_setopt(curl_, CURLOPT_NOPROGRESS, 0L);
 
-        // 根据post body长度是否大于0, 判断是否是post请求
-        if (postBodyLen > 0 && postBody != nullptr) {
-            logI(log_tag_, "curl post request, body len:" + std::to_string(postBodyLen) + ", body:" + postBody);
+        if (method == "POST") {
+            curl_easy_setopt(curl_, CURLOPT_POST, 1L);
+        } else if (method == "HEAD") {
+            curl_easy_setopt(curl_, CURLOPT_NOBODY, 1L);
+        } else if (method != "GET") {
+            curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, method.c_str());
+        }
+
+        // Body is supported for POST and custom methods such as PUT/PATCH/DELETE.
+        if (method != "GET" && method != "HEAD" && postBodyLen > 0 && postBody != nullptr) {
+            logI(log_tag_, "curl " + method + " request, body len:" + std::to_string(postBodyLen));
             // size of the POST input data
             curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, postBodyLen);
-            curl_easy_setopt(curl_, CURLOPT_POST, 1L);
             if (postBodyLen >= 8 * 1024 * 1024) {
                 logI(log_tag_, "Enter above 8MB branch.");
                 // 传 body 指针，不会拷贝数据，因此必须确保 perform 之前数据有效

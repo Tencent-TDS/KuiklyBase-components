@@ -45,3 +45,7 @@ class VBTransportGetResponse : VBTransportBaseResponse() {
     lateinit var request: VBTransportGetRequest
 }
 
+class VBTransportResponse : VBTransportBaseResponse() {
+    var data: Any? = null
+    lateinit var request: VBTransportRequest
+}

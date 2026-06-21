@@ -82,7 +82,7 @@ VBTransportInitHelper.init(config)
 ```
 
 ### Common Network Request Examples
-Some common HTTP GET/POST/string/byte request examples can be found in ***network/src/commonMain/service/VBTransportServiceTest.kt*** for your reference.
+Some common HTTP GET/POST/string/byte/custom method request examples can be found in ***network/src/commonMain/service/VBTransportServiceTest.kt*** for your reference.
 
 ### Demo Project Usage Instructions
 #### Android

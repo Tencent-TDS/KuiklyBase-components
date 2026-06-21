@@ -62,6 +62,7 @@ typedef struct {
 // Curl 请求信息
 typedef struct {
     const char *url;
+    const char *method;
     StringDic *headers;
     int64_t timeout;  // 单位 ms
     int postBodyLen;

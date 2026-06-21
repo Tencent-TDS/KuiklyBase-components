@@ -83,7 +83,7 @@ VBTransportInitHelper.init(config)
 ```
 
 ### 常用网络请求示例
-在 network/src/commonMain/service/VBTransportServiceTest.kt 中包含一些常用http get/post/string/byte 类型请求示例,可以参考.
+在 network/src/commonMain/service/VBTransportServiceTest.kt 中包含一些常用 http get/post/string/byte/自定义 method 类型请求示例,可以参考.
 
 ### demo 工程运行使用说明
 #### Android

@@ -23,6 +23,8 @@ import com.tencent.kmm.network.export.VBTransportGetRequest
 import com.tencent.kmm.network.export.VBTransportGetResponse
 import com.tencent.kmm.network.export.VBTransportPostRequest
 import com.tencent.kmm.network.export.VBTransportPostResponse
+import com.tencent.kmm.network.export.VBTransportRequest
+import com.tencent.kmm.network.export.VBTransportResponse
 import com.tencent.kmm.network.export.VBTransportStringRequest
 import com.tencent.kmm.network.export.VBTransportStringResponse
 import com.tencent.kmm.network.internal.VBPBLog
@@ -66,6 +68,16 @@ object HmTransportImpl : IVBTransportService {
 
         // 使用 libcurl 进行请求
         CurlRequestService.sendGetRequest(kmmGetRequest, kmmGetResponseCallback, logTag)
+    }
+
+    override fun request(
+        kmmRequest: VBTransportRequest,
+        kmmResponseCallback: (response: VBTransportResponse) -> Unit
+    ) {
+        val logTag = kmmRequest.logTag + "_" + kmmRequest.requestId
+
+        // 使用 libcurl 进行请求
+        CurlRequestService.sendRequest(kmmRequest, kmmResponseCallback, logTag)
     }
 
     override fun cancel(requestId: Int) {

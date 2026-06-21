@@ -20,7 +20,9 @@ import com.tencent.kmm.network.export.IVBPBLog
 import com.tencent.kmm.network.export.VBTransportBytesRequest
 import com.tencent.kmm.network.export.VBTransportContentType
 import com.tencent.kmm.network.export.VBTransportGetRequest
+import com.tencent.kmm.network.export.VBTransportMethod
 import com.tencent.kmm.network.export.VBTransportPostRequest
+import com.tencent.kmm.network.export.VBTransportRequest
 import com.tencent.kmm.network.export.VBTransportResultCode
 import com.tencent.kmm.network.export.VBTransportStringRequest
 import com.tencent.kmm.network.internal.VBPBLog
@@ -347,6 +349,28 @@ object VBTransportServiceTest {
                 "[TRACE]",
                 "302 response code:${it.errorCode}, message:${it.errorMessage}, url:${it.request.url}, " +
                         "header:${it.header}, data:${it.data}, request: ${it.request}, server ip:${it.serverIP}, port:${it.serverPort}"
+            )
+        }
+    }
+
+    @ObjCName("testSendPatchRequest")
+    fun testSendPatchRequest(
+        logTag: String = "TestKMMPatchRequest",
+        useCurl: Boolean = false
+    ) {
+        val request = VBTransportRequest()
+        request.method = VBTransportMethod.PATCH
+        request.url = "https://httpbin.org/patch"
+        request.logTag = logTag
+        request.header["Content-Type"] = VBTransportContentType.JSON.toString()
+        request.data = """{"name":"Kuikly","method":"PATCH"}"""
+        request.useCurl = useCurl
+        VBTransportService.sendRequest(request) {
+            val responseData = convertResponseData(it.data)
+            VBPBLog.i(
+                "[TRACE]",
+                "patch response code:${it.errorCode}, message:${it.errorMessage}, " +
+                        "size:${responseData.len}, data:${responseData.content}, request: ${it.request}"
             )
         }
     }

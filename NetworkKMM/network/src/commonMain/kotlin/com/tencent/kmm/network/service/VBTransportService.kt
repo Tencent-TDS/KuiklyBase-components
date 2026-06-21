@@ -26,6 +26,9 @@ import com.tencent.kmm.network.export.VBTransportGetResponse
 import com.tencent.kmm.network.export.VBTransportPostHandler
 import com.tencent.kmm.network.export.VBTransportPostRequest
 import com.tencent.kmm.network.export.VBTransportPostResponse
+import com.tencent.kmm.network.export.VBTransportHandler
+import com.tencent.kmm.network.export.VBTransportRequest
+import com.tencent.kmm.network.export.VBTransportResponse
 import com.tencent.kmm.network.export.VBTransportResultCode
 import com.tencent.kmm.network.export.VBTransportStringCompletionHandler
 import com.tencent.kmm.network.export.VBTransportStringRequest
@@ -140,6 +143,31 @@ object VBTransportService {
         }
         startTimeoutCheckTask(request.totalTimeout, request.requestId, request) {
             val timeoutResponse = VBTransportGetResponse().apply {
+                this.request = request
+                this.errorCode = VBTransportResultCode.CODE_FORCE_TIMEOUT
+                this.errorMessage = "请求超时"
+            }
+            handler?.invoke(timeoutResponse)
+        }
+    }
+
+    fun sendRequest(
+        request: VBTransportRequest,
+        handler: VBTransportHandler?
+    ) {
+        request.requestId = VBPBRequestIdGenerator.getRequestId()
+        networkScope.launch(track = true) {
+            val task = VBTransportTask(request.requestId, request.useCurl, request.logTag, taskManager)
+            taskManager.onTaskBegin(task)
+            task.sendRequest(request) { response ->
+                if (task.getState() != VBTransportState.Done) {
+                    task.setState(VBTransportState.Done)
+                    handler?.let { it(response) }
+                }
+            }
+        }
+        startTimeoutCheckTask(request.totalTimeout, request.requestId, request) {
+            val timeoutResponse = VBTransportResponse().apply {
                 this.request = request
                 this.errorCode = VBTransportResultCode.CODE_FORCE_TIMEOUT
                 this.errorMessage = "请求超时"
