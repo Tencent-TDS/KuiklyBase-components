@@ -85,6 +85,39 @@ VBTransportInitHelper.init(config)
 ### 常用网络请求示例
 在 network/src/commonMain/service/VBTransportServiceTest.kt 中包含一些常用 http get/post/string/byte/自定义 method 类型请求示例,可以参考.
 
+#### 自定义 Method 请求
+```kotlin
+val request = VBTransportRequest().apply {
+    method = VBTransportMethod.PUT
+    url = "https://httpbin.org/put"
+    header["Content-Type"] = VBTransportContentType.JSON.toString()
+    header["Authorization"] = "Bearer sample-token"
+    data = """{"name":"Kuikly","method":"PUT"}"""
+}
+
+VBTransportService.sendRequest(request) { response ->
+    println(response.data)
+}
+```
+
+#### 二进制文件上传
+```kotlin
+val request = VBTransportRequest().apply {
+    method = VBTransportMethod.POST
+    url = "https://httpbin.org/post"
+    header["Content-Type"] = VBTransportContentType.BYTE.toString()
+    header["X-File-Name"] = "sample.bin"
+    data = fileBytes
+    totalTimeout = 10000
+}
+
+VBTransportService.sendRequest(request) { response ->
+    println(response.errorMessage)
+}
+```
+
+如果服务端要求 multipart/form-data，可以自行拼接 multipart body bytes，并设置带 boundary 的 `Content-Type` 后再赋值给 `data`.
+
 ### demo 工程运行使用说明
 #### Android
 直接 run androidApp target 即可.

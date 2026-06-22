@@ -84,6 +84,39 @@ VBTransportInitHelper.init(config)
 ### Common Network Request Examples
 Some common HTTP GET/POST/string/byte/custom method request examples can be found in ***network/src/commonMain/service/VBTransportServiceTest.kt*** for your reference.
 
+#### Custom Method Request
+```kotlin
+val request = VBTransportRequest().apply {
+    method = VBTransportMethod.PUT
+    url = "https://httpbin.org/put"
+    header["Content-Type"] = VBTransportContentType.JSON.toString()
+    header["Authorization"] = "Bearer sample-token"
+    data = """{"name":"Kuikly","method":"PUT"}"""
+}
+
+VBTransportService.sendRequest(request) { response ->
+    println(response.data)
+}
+```
+
+#### Binary File Upload
+```kotlin
+val request = VBTransportRequest().apply {
+    method = VBTransportMethod.POST
+    url = "https://httpbin.org/post"
+    header["Content-Type"] = VBTransportContentType.BYTE.toString()
+    header["X-File-Name"] = "sample.bin"
+    data = fileBytes
+    totalTimeout = 10000
+}
+
+VBTransportService.sendRequest(request) { response ->
+    println(response.errorMessage)
+}
+```
+
+If your server requires multipart/form-data, build the multipart body bytes yourself and set the matching `Content-Type` boundary header before assigning the bytes to `data`.
+
 ### Demo Project Usage Instructions
 #### Android
 Simply run the androidApp target.

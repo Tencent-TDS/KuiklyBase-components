@@ -375,6 +375,56 @@ object VBTransportServiceTest {
         }
     }
 
+    @ObjCName("testSendPutRequest")
+    fun testSendPutRequest(
+        logTag: String = "TestKMMPutRequest",
+        useCurl: Boolean = false
+    ) {
+        val request = VBTransportRequest()
+        request.method = VBTransportMethod.PUT
+        request.url = "https://httpbin.org/put"
+        request.logTag = logTag
+        request.header["Content-Type"] = VBTransportContentType.JSON.toString()
+        request.header["Authorization"] = "Bearer sample-token"
+        request.header["X-Request-Source"] = "NetworkKMM"
+        request.data = """{"name":"Kuikly","method":"PUT"}"""
+        request.useCurl = useCurl
+        request.totalTimeout = 5000
+        VBTransportService.sendRequest(request) {
+            val responseData = convertResponseData(it.data)
+            VBPBLog.i(
+                "[TRACE]",
+                "put response code:${it.errorCode}, message:${it.errorMessage}, " +
+                        "size:${responseData.len}, data:${responseData.content}, request: ${it.request}"
+            )
+        }
+    }
+
+    @ObjCName("testUploadFileRequest")
+    fun testUploadFileRequest(
+        logTag: String = "TestKMMUploadFileRequest",
+        useCurl: Boolean = false
+    ) {
+        val request = VBTransportRequest()
+        request.method = VBTransportMethod.POST
+        request.url = "https://httpbin.org/post"
+        request.logTag = logTag
+        request.header["Content-Type"] = VBTransportContentType.BYTE.toString()
+        request.header["Authorization"] = "Bearer sample-token"
+        request.header["X-File-Name"] = "sample.bin"
+        request.data = byteData
+        request.useCurl = useCurl
+        request.totalTimeout = 10000
+        VBTransportService.sendRequest(request) {
+            val responseData = convertResponseData(it.data)
+            VBPBLog.i(
+                "[TRACE]",
+                "upload response code:${it.errorCode}, message:${it.errorMessage}, " +
+                        "size:${responseData.len}, data:${responseData.content}, request: ${it.request}"
+            )
+        }
+    }
+
     @ObjCName("testCancelRequest")
     fun testCancelRequest() {
         // 以 Post 为例
