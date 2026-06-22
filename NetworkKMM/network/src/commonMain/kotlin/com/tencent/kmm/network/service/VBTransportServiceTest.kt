@@ -21,10 +21,12 @@ import com.tencent.kmm.network.export.VBTransportBytesRequest
 import com.tencent.kmm.network.export.VBTransportContentType
 import com.tencent.kmm.network.export.VBTransportGetRequest
 import com.tencent.kmm.network.export.VBTransportMethod
+import com.tencent.kmm.network.export.VBTransportMultipartBodyBuilder
 import com.tencent.kmm.network.export.VBTransportPostRequest
 import com.tencent.kmm.network.export.VBTransportRequest
 import com.tencent.kmm.network.export.VBTransportResultCode
 import com.tencent.kmm.network.export.VBTransportStringRequest
+import com.tencent.kmm.network.export.setMultipartBody
 import com.tencent.kmm.network.internal.VBPBLog
 import kotlin.experimental.ExperimentalObjCName
 import kotlin.native.ObjCName
@@ -420,6 +422,35 @@ object VBTransportServiceTest {
             VBPBLog.i(
                 "[TRACE]",
                 "upload response code:${it.errorCode}, message:${it.errorMessage}, " +
+                        "size:${responseData.len}, data:${responseData.content}, request: ${it.request}"
+            )
+        }
+    }
+
+    @ObjCName("testUploadMultipartFileRequest")
+    fun testUploadMultipartFileRequest(
+        logTag: String = "TestKMMUploadMultipartFileRequest",
+        useCurl: Boolean = false
+    ) {
+        val multipartBody = VBTransportMultipartBodyBuilder()
+            .addFormField("name", "Kuikly")
+            .addFormField("uploadType", "multipart")
+            .addFile("file", "sample.bin", byteData, VBTransportContentType.BYTE.toString())
+            .build()
+
+        val request = VBTransportRequest()
+        request.method = VBTransportMethod.POST
+        request.url = "https://httpbin.org/post"
+        request.logTag = logTag
+        request.header["Authorization"] = "Bearer sample-token"
+        request.setMultipartBody(multipartBody)
+        request.useCurl = useCurl
+        request.totalTimeout = 10000
+        VBTransportService.sendRequest(request) {
+            val responseData = convertResponseData(it.data)
+            VBPBLog.i(
+                "[TRACE]",
+                "multipart upload response code:${it.errorCode}, message:${it.errorMessage}, " +
                         "size:${responseData.len}, data:${responseData.content}, request: ${it.request}"
             )
         }

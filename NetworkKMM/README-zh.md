@@ -116,7 +116,26 @@ VBTransportService.sendRequest(request) { response ->
 }
 ```
 
-如果服务端要求 multipart/form-data，可以自行拼接 multipart body bytes，并设置带 boundary 的 `Content-Type` 后再赋值给 `data`.
+#### Multipart 文件上传
+```kotlin
+val multipartBody = VBTransportMultipartBodyBuilder()
+    .addFormField("name", "Kuikly")
+    .addFormField("uploadType", "multipart")
+    .addFile("file", "sample.bin", fileBytes, VBTransportContentType.BYTE.toString())
+    .build()
+
+val request = VBTransportRequest().apply {
+    method = VBTransportMethod.POST
+    url = "https://httpbin.org/post"
+    header["Authorization"] = "Bearer sample-token"
+    setMultipartBody(multipartBody)
+    totalTimeout = 10000
+}
+
+VBTransportService.sendRequest(request) { response ->
+    println(response.data)
+}
+```
 
 ### demo 工程运行使用说明
 #### Android

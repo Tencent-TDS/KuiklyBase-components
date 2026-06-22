@@ -115,7 +115,26 @@ VBTransportService.sendRequest(request) { response ->
 }
 ```
 
-If your server requires multipart/form-data, build the multipart body bytes yourself and set the matching `Content-Type` boundary header before assigning the bytes to `data`.
+#### Multipart File Upload
+```kotlin
+val multipartBody = VBTransportMultipartBodyBuilder()
+    .addFormField("name", "Kuikly")
+    .addFormField("uploadType", "multipart")
+    .addFile("file", "sample.bin", fileBytes, VBTransportContentType.BYTE.toString())
+    .build()
+
+val request = VBTransportRequest().apply {
+    method = VBTransportMethod.POST
+    url = "https://httpbin.org/post"
+    header["Authorization"] = "Bearer sample-token"
+    setMultipartBody(multipartBody)
+    totalTimeout = 10000
+}
+
+VBTransportService.sendRequest(request) { response ->
+    println(response.data)
+}
+```
 
 ### Demo Project Usage Instructions
 #### Android
