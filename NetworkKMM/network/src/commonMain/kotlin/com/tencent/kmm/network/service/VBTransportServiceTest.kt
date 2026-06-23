@@ -20,9 +20,13 @@ import com.tencent.kmm.network.export.IVBPBLog
 import com.tencent.kmm.network.export.VBTransportBytesRequest
 import com.tencent.kmm.network.export.VBTransportContentType
 import com.tencent.kmm.network.export.VBTransportGetRequest
+import com.tencent.kmm.network.export.VBTransportMethod
+import com.tencent.kmm.network.export.VBTransportMultipartBodyBuilder
 import com.tencent.kmm.network.export.VBTransportPostRequest
+import com.tencent.kmm.network.export.VBTransportRequest
 import com.tencent.kmm.network.export.VBTransportResultCode
 import com.tencent.kmm.network.export.VBTransportStringRequest
+import com.tencent.kmm.network.export.setMultipartBody
 import com.tencent.kmm.network.internal.VBPBLog
 import kotlin.experimental.ExperimentalObjCName
 import kotlin.native.ObjCName
@@ -347,6 +351,107 @@ object VBTransportServiceTest {
                 "[TRACE]",
                 "302 response code:${it.errorCode}, message:${it.errorMessage}, url:${it.request.url}, " +
                         "header:${it.header}, data:${it.data}, request: ${it.request}, server ip:${it.serverIP}, port:${it.serverPort}"
+            )
+        }
+    }
+
+    @ObjCName("testSendPatchRequest")
+    fun testSendPatchRequest(
+        logTag: String = "TestKMMPatchRequest",
+        useCurl: Boolean = false
+    ) {
+        val request = VBTransportRequest()
+        request.method = VBTransportMethod.PATCH
+        request.url = "https://httpbin.org/patch"
+        request.logTag = logTag
+        request.header["Content-Type"] = VBTransportContentType.JSON.toString()
+        request.data = """{"name":"Kuikly","method":"PATCH"}"""
+        request.useCurl = useCurl
+        VBTransportService.sendRequest(request) {
+            val responseData = convertResponseData(it.data)
+            VBPBLog.i(
+                "[TRACE]",
+                "patch response code:${it.errorCode}, message:${it.errorMessage}, " +
+                        "size:${responseData.len}, data:${responseData.content}, request: ${it.request}"
+            )
+        }
+    }
+
+    @ObjCName("testSendPutRequest")
+    fun testSendPutRequest(
+        logTag: String = "TestKMMPutRequest",
+        useCurl: Boolean = false
+    ) {
+        val request = VBTransportRequest()
+        request.method = VBTransportMethod.PUT
+        request.url = "https://httpbin.org/put"
+        request.logTag = logTag
+        request.header["Content-Type"] = VBTransportContentType.JSON.toString()
+        request.header["Authorization"] = "Bearer sample-token"
+        request.header["X-Request-Source"] = "NetworkKMM"
+        request.data = """{"name":"Kuikly","method":"PUT"}"""
+        request.useCurl = useCurl
+        request.totalTimeout = 5000
+        VBTransportService.sendRequest(request) {
+            val responseData = convertResponseData(it.data)
+            VBPBLog.i(
+                "[TRACE]",
+                "put response code:${it.errorCode}, message:${it.errorMessage}, " +
+                        "size:${responseData.len}, data:${responseData.content}, request: ${it.request}"
+            )
+        }
+    }
+
+    @ObjCName("testUploadFileRequest")
+    fun testUploadFileRequest(
+        logTag: String = "TestKMMUploadFileRequest",
+        useCurl: Boolean = false
+    ) {
+        val request = VBTransportRequest()
+        request.method = VBTransportMethod.POST
+        request.url = "https://httpbin.org/post"
+        request.logTag = logTag
+        request.header["Content-Type"] = VBTransportContentType.BYTE.toString()
+        request.header["Authorization"] = "Bearer sample-token"
+        request.header["X-File-Name"] = "sample.bin"
+        request.data = byteData
+        request.useCurl = useCurl
+        request.totalTimeout = 10000
+        VBTransportService.sendRequest(request) {
+            val responseData = convertResponseData(it.data)
+            VBPBLog.i(
+                "[TRACE]",
+                "upload response code:${it.errorCode}, message:${it.errorMessage}, " +
+                        "size:${responseData.len}, data:${responseData.content}, request: ${it.request}"
+            )
+        }
+    }
+
+    @ObjCName("testUploadMultipartFileRequest")
+    fun testUploadMultipartFileRequest(
+        logTag: String = "TestKMMUploadMultipartFileRequest",
+        useCurl: Boolean = false
+    ) {
+        val multipartBody = VBTransportMultipartBodyBuilder()
+            .addFormField("name", "Kuikly")
+            .addFormField("uploadType", "multipart")
+            .addFile("file", "sample.bin", byteData, VBTransportContentType.BYTE.toString())
+            .build()
+
+        val request = VBTransportRequest()
+        request.method = VBTransportMethod.POST
+        request.url = "https://httpbin.org/post"
+        request.logTag = logTag
+        request.header["Authorization"] = "Bearer sample-token"
+        request.setMultipartBody(multipartBody)
+        request.useCurl = useCurl
+        request.totalTimeout = 10000
+        VBTransportService.sendRequest(request) {
+            val responseData = convertResponseData(it.data)
+            VBPBLog.i(
+                "[TRACE]",
+                "multipart upload response code:${it.errorCode}, message:${it.errorMessage}, " +
+                        "size:${responseData.len}, data:${responseData.content}, request: ${it.request}"
             )
         }
     }

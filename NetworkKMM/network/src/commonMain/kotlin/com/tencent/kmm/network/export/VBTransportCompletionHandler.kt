@@ -20,3 +20,4 @@ typealias VBTransportStringCompletionHandler = (response: VBTransportStringRespo
 typealias VBTransportBytesCompletionHandler = (response: VBTransportBytesResponse) -> Unit
 typealias VBTransportPostHandler = (response: VBTransportPostResponse) -> Unit
 typealias VBTransportGetHandler = (response: VBTransportGetResponse) -> Unit
+typealias VBTransportHandler = (response: VBTransportResponse) -> Unit

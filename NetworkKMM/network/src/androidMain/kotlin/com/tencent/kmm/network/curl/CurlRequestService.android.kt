@@ -23,6 +23,8 @@ import com.tencent.kmm.network.export.VBTransportGetRequest
 import com.tencent.kmm.network.export.VBTransportGetResponse
 import com.tencent.kmm.network.export.VBTransportPostRequest
 import com.tencent.kmm.network.export.VBTransportPostResponse
+import com.tencent.kmm.network.export.VBTransportRequest
+import com.tencent.kmm.network.export.VBTransportResponse
 import com.tencent.kmm.network.export.VBTransportStringRequest
 import com.tencent.kmm.network.export.VBTransportStringResponse
 
@@ -55,6 +57,14 @@ object CurlRequestServiceAndroid : ICurlRequestService {
     override fun sendBytesRequest(
         kmmBytesRequest: VBTransportBytesRequest,
         kmmBytesResponseCallback: (response: VBTransportBytesResponse) -> Unit,
+        logTag: String
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun request(
+        kmmRequest: VBTransportRequest,
+        kmmResponseCallback: (response: VBTransportResponse) -> Unit,
         logTag: String
     ) {
         TODO("Not yet implemented")

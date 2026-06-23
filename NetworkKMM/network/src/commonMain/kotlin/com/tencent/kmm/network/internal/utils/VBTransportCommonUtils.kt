@@ -25,6 +25,8 @@ import com.tencent.kmm.network.export.VBTransportGetRequest
 import com.tencent.kmm.network.export.VBTransportGetResponse
 import com.tencent.kmm.network.export.VBTransportPostRequest
 import com.tencent.kmm.network.export.VBTransportPostResponse
+import com.tencent.kmm.network.export.VBTransportRequest
+import com.tencent.kmm.network.export.VBTransportResponse
 import com.tencent.kmm.network.export.VBTransportStringRequest
 import com.tencent.kmm.network.export.VBTransportStringResponse
 import com.tencent.kmm.network.internal.VBPBLog
@@ -78,6 +80,17 @@ object VBTransportCommonUtils {
         }
     }
 
+    fun wrapRequestCallback(
+        callback: (VBTransportResponse) -> Unit
+    ): (VBTransportBaseResponse) -> Unit {
+        return { baseResponse ->
+            val response = baseResponse as? VBTransportResponse
+            response?.let { callback(it) } ?: run {
+                VBPBLog.i(TAG, "wrapRequestCallback response is null !!!")
+            }
+        }
+    }
+
     fun buildResponseAndCallback(
         taskMap: MutableMap<Int, Job>,
         errorCode: Int,
@@ -89,7 +102,13 @@ object VBTransportCommonUtils {
     ) {
         VBPBLog.i(TAG, "${request.logTag} receive response, errCode:${errorCode}, " +
                 "errMsg:${errorMsg}, headers:${headers}, data size:${data.size}")
-        if (request is VBTransportGetRequest) {
+        if (request is VBTransportRequest) {
+            // 自定义 method 请求回调
+            val kmmResponse = VBTransportResponse().apply {
+                updateResponse(errorCode, errorMsg, headers, data, request, this)
+            }
+            kmmCallback(kmmResponse)
+        } else if (request is VBTransportGetRequest) {
             // Get 请求回调
             val kmmGetResponse = VBTransportGetResponse().apply {
                 updateResponse(errorCode, errorMsg, headers, data, request, this)
@@ -147,6 +166,11 @@ object VBTransportCommonUtils {
             is VBTransportStringResponse -> {
                 response.data = data.decodeToString()
                 response.request = request as VBTransportStringRequest
+            }
+
+            is VBTransportResponse -> {
+                response.data = convertDataWithContentType(data, request)
+                response.request = request as VBTransportRequest
             }
         }
     }

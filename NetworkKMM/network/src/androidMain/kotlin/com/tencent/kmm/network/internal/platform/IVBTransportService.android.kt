@@ -25,6 +25,8 @@ import com.tencent.kmm.network.export.VBTransportGetRequest
 import com.tencent.kmm.network.export.VBTransportGetResponse
 import com.tencent.kmm.network.export.VBTransportPostRequest
 import com.tencent.kmm.network.export.VBTransportPostResponse
+import com.tencent.kmm.network.export.VBTransportRequest
+import com.tencent.kmm.network.export.VBTransportResponse
 import com.tencent.kmm.network.export.VBTransportStringRequest
 import com.tencent.kmm.network.export.VBTransportStringResponse
 import com.tencent.kmm.network.internal.VBPBLog
@@ -33,18 +35,19 @@ import com.tencent.kmm.network.internal.utils.VBTransportCommonUtils.buildRespon
 import com.tencent.kmm.network.internal.utils.VBTransportCommonUtils.wrapBytesCallback
 import com.tencent.kmm.network.internal.utils.VBTransportCommonUtils.wrapGetCallback
 import com.tencent.kmm.network.internal.utils.VBTransportCommonUtils.wrapPostCallback
+import com.tencent.kmm.network.internal.utils.VBTransportCommonUtils.wrapRequestCallback
 import com.tencent.kmm.network.internal.utils.VBTransportCommonUtils.wrapStringCallback
 import com.tencent.kmm.network.internal.utils.getHttpClient
 import com.tencent.kmm.network.internal.utils.readKnownSize
 import com.tencent.kmm.network.internal.utils.readUnknownSize
 import io.ktor.client.HttpClient
 import io.ktor.client.request.HttpRequestBuilder
-import io.ktor.client.request.get
 import io.ktor.client.request.header
-import io.ktor.client.request.post
+import io.ktor.client.request.request
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.ContentType
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentLength
 import io.ktor.http.contentType
@@ -63,14 +66,9 @@ object AndroidTransportImpl : IVBTransportService {
     ) {
         val job = scope.launch {
             val client = getHttpClient(request) as HttpClient
-            val response = if (request is VBTransportGetRequest || request is VBTransportStringRequest) {
-                client.get(request.url) {
-                    constructRequest(request)
-                }
-            } else {
-                client.post(request.url) {
-                    constructRequest(request)
-                }
+            val response = client.request(request.url) {
+                method = HttpMethod(request.method.name)
+                constructRequest(request)
             }
 
             var errMsg = ""
@@ -144,6 +142,15 @@ object AndroidTransportImpl : IVBTransportService {
         triggerRequest(kmmGetRequest, wrapGetCallback(kmmGetResponseCallback))
     }
 
+    override fun request(
+        kmmRequest: VBTransportRequest,
+        kmmResponseCallback: (response: VBTransportResponse) -> Unit
+    ) {
+        logI("send ${kmmRequest.method} request, id:${kmmRequest.requestId}, url:${kmmRequest.url}, " +
+                "header:${kmmRequest.header}", kmmRequest.logTag)
+        triggerRequest(kmmRequest, wrapRequestCallback(kmmResponseCallback))
+    }
+
     private fun HttpRequestBuilder.constructRequest(kmmRequest: VBTransportBaseRequest) {
         // 设置 header
         kmmRequest.header
@@ -151,10 +158,8 @@ object AndroidTransportImpl : IVBTransportService {
             .forEach { (k, v) -> header(k, v) }
 
         // 设置 post body
-        if (kmmRequest is VBTransportBytesRequest) {
-            setBody(kmmRequest.data)
-        } else if (kmmRequest is VBTransportPostRequest) {
-            setBody(kmmRequest.data)
+        kmmRequest.bodyData()?.let {
+            setBody(it)
         }
 
         val requestContentType = kmmRequest.header["Content-Type"]?.let { contentType ->

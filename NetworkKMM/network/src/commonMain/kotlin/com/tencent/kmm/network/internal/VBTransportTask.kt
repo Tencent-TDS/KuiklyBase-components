@@ -27,6 +27,9 @@ import com.tencent.kmm.network.export.VBTransportGetResponse
 import com.tencent.kmm.network.export.VBTransportPostHandler
 import com.tencent.kmm.network.export.VBTransportPostRequest
 import com.tencent.kmm.network.export.VBTransportPostResponse
+import com.tencent.kmm.network.export.VBTransportHandler
+import com.tencent.kmm.network.export.VBTransportRequest
+import com.tencent.kmm.network.export.VBTransportResponse
 import com.tencent.kmm.network.export.VBTransportResultCode
 import com.tencent.kmm.network.export.VBTransportStringCompletionHandler
 import com.tencent.kmm.network.export.VBTransportStringRequest
@@ -79,6 +82,16 @@ class VBTransportTask(
         return { response ->
             val res = response as? VBTransportBytesResponse
             res?.let { bytesCallback(it) }
+        }
+    }
+
+    private fun wrapResponse(
+        callback: ((response: VBTransportResponse) -> Unit)?
+    ): ((baseResponse: VBTransportBaseResponse) -> Unit)? {
+        callback ?: return null
+        return { response ->
+            val res = response as? VBTransportResponse
+            res?.let { callback(it) }
         }
     }
 
@@ -196,6 +209,29 @@ class VBTransportTask(
         state = VBTransportState.Running
         getIVBTransportService().get(request) { response ->
             handleResponse(request, response, wrapGetResponse(handler))
+        }
+    }
+
+    fun sendRequest(
+        request: VBTransportRequest,
+        handler: VBTransportHandler?
+    ) {
+        if (isCanceledOrRemoved()) {
+            val response = VBTransportResponse()
+            logI("execute() request task is canceled before")
+            handler?.let {
+                response.errorCode = VBTransportResultCode.CODE_CANCELED
+                response.errorMessage = "Request has been canceled"
+                logI("execute() invoke failHandler，task has been canceled")
+                it(response)
+            } ?: run {
+                logI("task has been canceled and handler is null!")
+            }
+            return
+        }
+        state = VBTransportState.Running
+        getIVBTransportService().request(request) { response ->
+            handleResponse(request, response, wrapResponse(handler))
         }
     }
 

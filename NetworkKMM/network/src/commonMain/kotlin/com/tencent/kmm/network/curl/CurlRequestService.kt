@@ -23,6 +23,8 @@ import com.tencent.kmm.network.export.VBTransportGetRequest
 import com.tencent.kmm.network.export.VBTransportGetResponse
 import com.tencent.kmm.network.export.VBTransportPostRequest
 import com.tencent.kmm.network.export.VBTransportPostResponse
+import com.tencent.kmm.network.export.VBTransportRequest
+import com.tencent.kmm.network.export.VBTransportResponse
 import com.tencent.kmm.network.export.VBTransportStringRequest
 import com.tencent.kmm.network.export.VBTransportStringResponse
 
@@ -57,6 +59,14 @@ object CurlRequestService {
         logTag: String
     ) {
         getCurlRequestService().sendBytesRequest(request, handler, logTag)
+    }
+
+    fun sendRequest(
+        request: VBTransportRequest,
+        handler: ((response: VBTransportResponse) -> Unit),
+        logTag: String
+    ) {
+        getCurlRequestService().request(request, handler, logTag)
     }
 
     fun cancel(requestId: Int) {

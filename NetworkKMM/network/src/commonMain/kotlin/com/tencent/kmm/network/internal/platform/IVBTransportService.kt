@@ -22,6 +22,8 @@ import com.tencent.kmm.network.export.VBTransportGetRequest
 import com.tencent.kmm.network.export.VBTransportGetResponse
 import com.tencent.kmm.network.export.VBTransportPostRequest
 import com.tencent.kmm.network.export.VBTransportPostResponse
+import com.tencent.kmm.network.export.VBTransportRequest
+import com.tencent.kmm.network.export.VBTransportResponse
 import com.tencent.kmm.network.export.VBTransportStringRequest
 import com.tencent.kmm.network.export.VBTransportStringResponse
 
@@ -56,6 +58,14 @@ interface IVBTransportService {
     fun get(
         kmmGetRequest: VBTransportGetRequest,
         kmmGetResponseCallback: (response: VBTransportGetResponse) -> Unit
+    )
+
+    /**
+     * 发送自定义 HTTP method 请求
+     */
+    fun request(
+        kmmRequest: VBTransportRequest,
+        kmmResponseCallback: (response: VBTransportResponse) -> Unit
     )
 
     /**

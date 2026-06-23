@@ -21,6 +21,7 @@ import com.tencent.kmm.network.internal.VBPBLog
 import com.tencent.kmm.network.internal.utils.VBTransportCommonUtils.wrapBytesCallback
 import com.tencent.kmm.network.internal.utils.VBTransportCommonUtils.wrapGetCallback
 import com.tencent.kmm.network.internal.utils.VBTransportCommonUtils.wrapPostCallback
+import com.tencent.kmm.network.internal.utils.VBTransportCommonUtils.wrapRequestCallback
 import com.tencent.kmm.network.internal.utils.VBTransportCommonUtils.wrapStringCallback
 import com.tencent.qqlive.kmm.native.libcurl.Cancel
 import com.tencent.qqlive.kmm.native.libcurl.CreateCurlClient
@@ -42,6 +43,8 @@ import com.tencent.kmm.network.export.VBTransportGetRequest
 import com.tencent.kmm.network.export.VBTransportGetResponse
 import com.tencent.kmm.network.export.VBTransportPostRequest
 import com.tencent.kmm.network.export.VBTransportPostResponse
+import com.tencent.kmm.network.export.VBTransportRequest
+import com.tencent.kmm.network.export.VBTransportResponse
 import com.tencent.kmm.network.export.VBTransportStringRequest
 import com.tencent.kmm.network.export.VBTransportStringResponse
 import kotlinx.cinterop.ByteVar
@@ -153,41 +156,35 @@ object CurlRequestServiceHM : ICurlRequestService {
     ): CValue<CurlRequest> {
         return cValue<CurlRequest> {
             this.url = toCSTR(request.url, memScope)
+            this.method = toCSTR(request.method.name, memScope)
             this.headers = headers.ptr
             this.timeout = request.totalTimeout
             this.postBodyLen = 0
-            if (request is VBTransportPostRequest && request.isDataInitialize()) {
-                if (request.data is ByteArray) {
-                    val byteData = (request.data as ByteArray)
-                    logI("[$logTag] generate native Post curl params with bytearray data. " +
-                            "size: ${byteData.size}, data: $byteData")
-                    val buffer = nativeHeap.allocArray<int8_tVar>(byteData.size)
-                    if (byteData.isNotEmpty()) {
-                        byteData.usePinned { pinnedData ->
-                            memcpy(buffer, pinnedData.addressOf(0), byteData.size.convert())
+            when (val data = request.bodyData()) {
+                is ByteArray -> {
+                    logI("[$logTag] generate native ${request.method} curl params with bytearray data. " +
+                            "size: ${data.size}, data: $data")
+                    val buffer = nativeHeap.allocArray<int8_tVar>(data.size)
+                    if (data.isNotEmpty()) {
+                        data.usePinned { pinnedData ->
+                            memcpy(buffer, pinnedData.addressOf(0), data.size.convert())
                         }
                     }
-                    this.postBodyLen = byteData.size
+                    this.postBodyLen = data.size
                     this.postBody = buffer
-                } else {
-                    // String 类型
-                    val strData = (request.data as? String) ?: ""
+                }
+
+                null -> {
+                    // no body
+                }
+
+                else -> {
+                    val strData = data.toString()
                     this.postBodyLen = strData.encodeToByteArray().size
                     this.postBody = toCSTR(strData, memScope)
-                    logI("[$logTag] generate native Post params with string data. " +
+                    logI("[$logTag] generate native ${request.method} params with string data. " +
                             "size: ${postBodyLen}, data: $strData")
                 }
-            } else if (request is VBTransportBytesRequest) {
-                logI("[$logTag] generate native Bytes curl params with bytearray data. " +
-                        "size: ${request.data.size}, data: ${request.data}")
-                val buffer = nativeHeap.allocArray<int8_tVar>(request.data.size)
-                if (request.data.isNotEmpty()) {
-                    request.data.usePinned { pinnedData ->
-                        memcpy(buffer, pinnedData.addressOf(0), request.data.size.convert())
-                    }
-                }
-                this.postBodyLen = request.data.size
-                this.postBody = buffer
             }
         }
     }
@@ -230,6 +227,16 @@ object CurlRequestServiceHM : ICurlRequestService {
         logI("[${logTag}] send byte request, id: ${kmmBytesRequest.requestId}, " +
                 "url: ${kmmBytesRequest.url}, header: ${kmmBytesRequest.header}")
         startRequest(kmmBytesRequest, wrapBytesCallback(kmmBytesResponseCallback), logTag)
+    }
+
+    override fun request(
+        kmmRequest: VBTransportRequest,
+        kmmResponseCallback: (response: VBTransportResponse) -> Unit,
+        logTag: String
+    ) {
+        logI("[${logTag}] send ${kmmRequest.method} request, id: ${kmmRequest.requestId}, " +
+                "url: ${kmmRequest.url}, header: ${kmmRequest.header}")
+        startRequest(kmmRequest, wrapRequestCallback(kmmResponseCallback), logTag)
     }
 
     private fun buildPBRequestHeader(headers: Map<String, String>): Map<String, String> {
@@ -336,7 +343,13 @@ object CurlRequestServiceHM : ICurlRequestService {
         nativeResponse: CurlNativeResponse,
         responseCallback: (response: VBTransportBaseResponse) -> Unit
     ) {
-        if (request is VBTransportGetRequest) {
+        if (request is VBTransportRequest) {
+            // 自定义 method 请求回调
+            val kmmResponse = VBTransportResponse().apply {
+                updateResponse(request.logTag, nativeResponse, request, this)
+            }
+            responseCallback(kmmResponse)
+        } else if (request is VBTransportGetRequest) {
             // Get 请求回调
             val kmmGetResponse = VBTransportGetResponse().apply {
                 updateResponse(request.logTag, nativeResponse, request, this)
@@ -399,6 +412,11 @@ object CurlRequestServiceHM : ICurlRequestService {
             is VBTransportStringResponse -> {
                 data?.let { response.data = data as String }
                 response.request = request as VBTransportStringRequest
+            }
+
+            is VBTransportResponse -> {
+                response.data = data
+                response.request = request as VBTransportRequest
             }
         }
     }
