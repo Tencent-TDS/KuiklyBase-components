@@ -29,6 +29,16 @@ import kotlin.reflect.KClass
 const val JS_REGISTER_SERVICE_METHOD_NAME = "registerServiceProvider"
 const val JS_CALL_SERVICE_METHOD_NAME = "callService"
 
+/**
+ * Method names produced when JS/ArkTS coerces a service Proxy via ToPrimitive.
+ * `String(Symbol.toPrimitive)` becomes `"Symbol(Symbol.toPrimitive)"`.
+ */
+internal fun isJsWellKnownCoercionMethod(methodName: String): Boolean {
+    return methodName == "valueOf" ||
+        methodName == "toString" ||
+        methodName == "Symbol(Symbol.toPrimitive)"
+}
+
 val serviceProxyRegister = ServiceProxyRegister()
 
 /**
@@ -103,6 +113,10 @@ internal fun forwardServiceCall(env: napi_env?, callbackInfo: napi_callback_info
     }
 
     val serviceName = serviceNameJSValue.toKString()!!
+    if (isJsWellKnownCoercionMethod(methodName)) {
+        debug("callService $serviceName#$methodName ignored (JS primitive coercion)")
+        return ktValueToJSValue(env, serviceName, String::class)
+    }
     val invokable = serviceProviderRegister.getInvokable(proxyJSValue, serviceName)
     val paramsTypes = invokable.getParamsTypeList(methodName)
     val expectedSize = invokable.getMinParamsSize(methodName)
