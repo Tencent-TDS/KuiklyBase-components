@@ -9,7 +9,6 @@ import platform.ohos.knoi.getElementInArray
 import platform.ohos.knoi.getTypeArrayLength
 import platform.ohos.knoi.getTypeArrayType
 import platform.ohos.knoi.getTypeArrayValue
-import platform.ohos.knoi.isArray
 import platform.ohos.knoi.isArrayBuffer
 import platform.ohos.knoi.isTypedArray
 import platform.ohos.knoi.setElementInArray
@@ -71,10 +70,6 @@ open class ArrayTypeConverter : TypeConverter<Array<Any?>> {
 
     override fun getKType(): KClass<out Any> {
         return Array::class
-    }
-
-    override fun isSupportJSType(env: napi_env?, type: napi_valuetype, value: napi_value?): Boolean {
-        return isArray(env, value) || isTypedArray(env, value)
     }
 }
 

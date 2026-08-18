@@ -66,18 +66,16 @@ private inline fun <T> jsNumberTo(value: Any?, type: KClass<*>, map: (Number) ->
  * Service/export bindings only retain `Array::class` at runtime, so JS `Array<number>`
  * arrives as `Array<Double>`. An unchecked `as Array<Int>` followed by [Array.toIntArray]
  * then unboxes those Doubles as Int and produces all zeros.
+ *
+ * This is inline/reified so [Array] is created with the real element class (Integer[] on JVM).
  */
 inline fun <reified T : Any> coerceJsArray(value: Any?): Array<T> {
-    return coerceJsArray(value, T::class)
-}
-
-fun <T : Any> coerceJsArray(value: Any?, elementClass: KClass<T>): Array<T> {
     val array = value as? Array<*>
         ?: throw IllegalArgumentException(
-            "Expected Array<${elementClass.simpleName}>, got ${value?.let { it::class.simpleName } ?: "null"}"
+            "Expected Array<${T::class.simpleName}>, got ${value?.let { it::class.simpleName } ?: "null"}"
         )
     return Array(array.size) { index ->
-        coerceJsArrayElement(array[index], elementClass, index)
+        coerceJsArrayElement(array[index], T::class, index)
     }
 }
 
@@ -101,7 +99,7 @@ fun <T : Any> coerceJsList(value: Any?, elementClass: KClass<T>): List<T> {
     }
 }
 
-private fun <T : Any> coerceJsArrayElement(value: Any?, elementClass: KClass<T>, index: Int): T {
+fun <T : Any> coerceJsArrayElement(value: Any?, elementClass: KClass<T>, index: Int): T {
     if (value == null) {
         throw IllegalArgumentException(
             "Array/List element at index $index is null; cannot convert to ${elementClass.simpleName}"
