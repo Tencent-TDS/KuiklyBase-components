@@ -28,6 +28,8 @@ import com.tencent.kmm.network.export.VBTransportPostResponse
 import com.tencent.kmm.network.export.VBTransportStringRequest
 import com.tencent.kmm.network.export.VBTransportStringResponse
 import com.tencent.kmm.network.internal.VBPBLog
+import com.tencent.kmm.network.internal.createNetworkIOScope
+import com.tencent.kmm.network.internal.launchTransportRequest
 import com.tencent.kmm.network.internal.utils.ByteReadChannelWrapper
 import com.tencent.kmm.network.internal.utils.VBTransportCommonUtils.buildResponseAndCallback
 import com.tencent.kmm.network.internal.utils.VBTransportCommonUtils.wrapBytesCallback
@@ -48,14 +50,10 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentLength
 import io.ktor.http.contentType
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 
 private val iOSTransportImpl: IVBTransportService = IOSTransportImpl()
-private val scope = CoroutineScope(Dispatchers.IO)
+private val scope = createNetworkIOScope(VBPBLog.HMTRANSPORTIMPL)
 private val taskMap: MutableMap<Int, Job> = mutableMapOf()
 private const val TAG = "IOSTransportImpl"
 
@@ -64,7 +62,7 @@ class IOSTransportImpl : IVBTransportService {
         request: VBTransportBaseRequest,
         kmmCallback: (response: VBTransportBaseResponse) -> Unit
     ) {
-        val job = scope.launch {
+        scope.launchTransportRequest(request, taskMap, kmmCallback) {
             val client = getHttpClient(request) as HttpClient
             val response = when (request) {
                 is VBTransportGetRequest, is VBTransportStringRequest ->
@@ -103,7 +101,6 @@ class IOSTransportImpl : IVBTransportService {
                 kmmCallback
             )
         }
-        taskMap[request.requestId] = job
     }
 
     override fun sendBytesRequest(

@@ -25,6 +25,7 @@ import com.tencent.kmm.network.export.VBTransportGetRequest
 import com.tencent.kmm.network.export.VBTransportGetResponse
 import com.tencent.kmm.network.export.VBTransportPostRequest
 import com.tencent.kmm.network.export.VBTransportPostResponse
+import com.tencent.kmm.network.export.VBTransportResultCode
 import com.tencent.kmm.network.export.VBTransportStringRequest
 import com.tencent.kmm.network.export.VBTransportStringResponse
 import com.tencent.kmm.network.internal.VBPBLog
@@ -76,6 +77,58 @@ object VBTransportCommonUtils {
                 VBPBLog.i(TAG, "wrapBytesCallback byteResponse is null !!!")
             }
         }
+    }
+
+    internal fun exceptionMessage(error: Throwable): String =
+        error.message?.takeIf { it.isNotEmpty() } ?: error::class.simpleName ?: "Exception"
+
+    internal fun createExceptionResponse(
+        request: VBTransportBaseRequest,
+        error: Throwable
+    ): VBTransportBaseResponse {
+        val errorMsg = exceptionMessage(error)
+        return when (request) {
+            is VBTransportGetRequest -> VBTransportGetResponse().apply {
+                this.errorCode = VBTransportResultCode.CODE_EXCEPTION
+                this.errorMessage = errorMsg
+                this.request = request
+            }
+            is VBTransportStringRequest -> VBTransportStringResponse().apply {
+                this.errorCode = VBTransportResultCode.CODE_EXCEPTION
+                this.errorMessage = errorMsg
+                this.request = request
+            }
+            is VBTransportPostRequest -> VBTransportPostResponse().apply {
+                this.errorCode = VBTransportResultCode.CODE_EXCEPTION
+                this.errorMessage = errorMsg
+                this.request = request
+            }
+            is VBTransportBytesRequest -> VBTransportBytesResponse().apply {
+                this.errorCode = VBTransportResultCode.CODE_EXCEPTION
+                this.errorMessage = errorMsg
+                this.request = request
+            }
+            else -> VBTransportBaseResponse().apply {
+                this.errorCode = VBTransportResultCode.CODE_EXCEPTION
+                this.errorMessage = errorMsg
+            }
+        }
+    }
+
+    internal fun notifyRequestException(
+        taskMap: MutableMap<Int, Job>,
+        request: VBTransportBaseRequest,
+        error: Throwable,
+        kmmCallback: (response: VBTransportBaseResponse) -> Unit
+    ) {
+        VBPBLog.e(
+            TAG,
+            "${request.logTag} request exception, errCode:${VBTransportResultCode.CODE_EXCEPTION}, " +
+                "errMsg:${error.message}",
+            error
+        )
+        kmmCallback(createExceptionResponse(request, error))
+        taskMap.remove(request.requestId)
     }
 
     fun buildResponseAndCallback(

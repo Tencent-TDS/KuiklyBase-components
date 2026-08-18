@@ -17,6 +17,7 @@
 package com.tencent.kmm.network.service
 
 import com.tencent.kmm.network.export.VBTransportBaseRequest
+import com.tencent.kmm.network.export.VBTransportBaseResponse
 import com.tencent.kmm.network.export.VBTransportBytesCompletionHandler
 import com.tencent.kmm.network.export.VBTransportBytesRequest
 import com.tencent.kmm.network.export.VBTransportBytesResponse
@@ -35,15 +36,16 @@ import com.tencent.kmm.network.internal.VBPBRequestIdGenerator
 import com.tencent.kmm.network.internal.VBTransportManager
 import com.tencent.kmm.network.internal.VBTransportState
 import com.tencent.kmm.network.internal.VBTransportTask
+import com.tencent.kmm.network.internal.createNetworkIOScope
+import com.tencent.kmm.network.internal.utils.VBTransportCommonUtils
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 object VBTransportService {
 
-    private val networkScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+    private val networkScope: CoroutineScope = createNetworkIOScope(VBPBLog.TASK_MANAGER)
     private val taskManager = VBTransportManager
 
     // 发送字节数组Post类型网络请求
@@ -52,15 +54,10 @@ object VBTransportService {
         handler: VBTransportBytesCompletionHandler?,
     ) {
         request.requestId = VBPBRequestIdGenerator.getRequestId()
-        networkScope.launch(track = true) {
-            val task = VBTransportTask(request.requestId, request.useCurl, request.logTag, taskManager)
-            taskManager.onTaskBegin(task)
-            task.sendBytesRequest(request) { response ->
-                if (task.getState() != VBTransportState.Done) {
-                    task.setState(VBTransportState.Done)
-                    handler?.let { it(response) }
-                }
-            }
+        executeInScope(request, handler, {
+            VBTransportBytesResponse().apply { this.request = request }
+        }) { task, onComplete ->
+            task.sendBytesRequest(request, onComplete)
         }
         startTimeoutCheckTask(request.totalTimeout, request.requestId, request) {
             val timeoutResponse = VBTransportBytesResponse().apply {
@@ -78,15 +75,10 @@ object VBTransportService {
         handler: VBTransportStringCompletionHandler?,
     ) {
         request.requestId = VBPBRequestIdGenerator.getRequestId()
-        networkScope.launch(track = true) {
-            val task = VBTransportTask(request.requestId, request.useCurl, request.logTag, taskManager)
-            taskManager.onTaskBegin(task)
-            task.sendStringRequest(request) { response ->
-                if (task.getState() != VBTransportState.Done) {
-                    task.setState(VBTransportState.Done)
-                    handler?.let { it(response) }
-                }
-            }
+        executeInScope(request, handler, {
+            VBTransportStringResponse().apply { this.request = request }
+        }) { task, onComplete ->
+            task.sendStringRequest(request, onComplete)
         }
         startTimeoutCheckTask(request.totalTimeout, request.requestId, request) {
             val timeoutResponse = VBTransportStringResponse().apply {
@@ -103,15 +95,10 @@ object VBTransportService {
         handler: VBTransportPostHandler?
     ) {
         request.requestId = VBPBRequestIdGenerator.getRequestId()
-        networkScope.launch(track = true) {
-            val task = VBTransportTask(request.requestId, request.useCurl, request.logTag, taskManager)
-            taskManager.onTaskBegin(task)
-            task.sendPostRequest(request) { response ->
-                if (task.getState() != VBTransportState.Done) {
-                    task.setState(VBTransportState.Done)
-                    handler?.let { it(response) }
-                }
-            }
+        executeInScope(request, handler, {
+            VBTransportPostResponse().apply { this.request = request }
+        }) { task, onComplete ->
+            task.sendPostRequest(request, onComplete)
         }
         startTimeoutCheckTask(request.totalTimeout, request.requestId, request) {
             val timeoutResponse = VBTransportPostResponse().apply {
@@ -128,15 +115,10 @@ object VBTransportService {
         handler: VBTransportGetHandler?
     ) {
         request.requestId = VBPBRequestIdGenerator.getRequestId()
-        networkScope.launch(track = true) {
-            val task = VBTransportTask(request.requestId, request.useCurl, request.logTag, taskManager)
-            taskManager.onTaskBegin(task)
-            task.sendGetRequest(request) { response ->
-                if (task.getState() != VBTransportState.Done) {
-                    task.setState(VBTransportState.Done)
-                    handler?.let { it(response) }
-                }
-            }
+        executeInScope(request, handler, {
+            VBTransportGetResponse().apply { this.request = request }
+        }) { task, onComplete ->
+            task.sendGetRequest(request, onComplete)
         }
         startTimeoutCheckTask(request.totalTimeout, request.requestId, request) {
             val timeoutResponse = VBTransportGetResponse().apply {
@@ -145,6 +127,42 @@ object VBTransportService {
                 this.errorMessage = "请求超时"
             }
             handler?.invoke(timeoutResponse)
+        }
+    }
+
+    private fun <R : VBTransportBaseResponse> executeInScope(
+        request: VBTransportBaseRequest,
+        handler: ((R) -> Unit)?,
+        createErrorResponse: () -> R,
+        send: (VBTransportTask, (R) -> Unit) -> Unit
+    ) {
+        networkScope.launch(track = true) {
+            val task = VBTransportTask(request.requestId, request.useCurl, request.logTag, taskManager)
+            taskManager.onTaskBegin(task)
+            try {
+                send(task) { response ->
+                    if (task.getState() != VBTransportState.Done) {
+                        task.setState(VBTransportState.Done)
+                        handler?.invoke(response)
+                    }
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Throwable) {
+                VBPBLog.e(
+                    VBPBLog.TASK,
+                    "${request.logTag} request failed: ${error.message}",
+                    error
+                )
+                if (task.getState() != VBTransportState.Done) {
+                    task.setState(VBTransportState.Done)
+                    val response = createErrorResponse()
+                    response.errorCode = VBTransportResultCode.CODE_EXCEPTION
+                    response.errorMessage = VBTransportCommonUtils.exceptionMessage(error)
+                    handler?.invoke(response)
+                    taskManager.onTaskFinish(request.requestId)
+                }
+            }
         }
     }
 

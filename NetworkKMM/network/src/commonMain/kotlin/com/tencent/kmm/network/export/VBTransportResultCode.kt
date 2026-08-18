@@ -23,4 +23,6 @@ object VBTransportResultCode {
     const val CODE_CANCELED = -10001
     // 强制超时
     const val CODE_FORCE_TIMEOUT = -2001
+    // 请求过程中发生异常（网络失败、协议错误等）
+    const val CODE_EXCEPTION = -3001
 }
