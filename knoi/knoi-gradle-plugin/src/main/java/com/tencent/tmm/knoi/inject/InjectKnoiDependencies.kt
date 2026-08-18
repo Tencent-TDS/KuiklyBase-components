@@ -7,7 +7,11 @@ import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
-val SUPPORTED_PLATFORMS = setOf(KotlinPlatformType.androidJvm, KotlinPlatformType.native)
+val SUPPORTED_PLATFORMS = setOf(
+    KotlinPlatformType.androidJvm,
+    KotlinPlatformType.jvm,
+    KotlinPlatformType.native
+)
 fun injectKNOIConfig(
     project: Project, kmp: KotlinMultiplatformExtension, extension: KnoiExtension
 ) {

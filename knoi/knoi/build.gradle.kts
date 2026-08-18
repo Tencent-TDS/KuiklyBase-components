@@ -27,6 +27,15 @@ kotlin {
         publishLibraryVariantsGroupedByFlavor = true
         publishLibraryVariants("release", "debug")
     }
+
+    // JVM平台，供仅声明 jvm()（而非 androidTarget）的 KMP 模块依赖 knoi
+    jvm {
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = "1.8"
+            }
+        }
+    }
     ohosArm64 {
         val main by compilations.getting
         val interop by main.cinterops.creating {
