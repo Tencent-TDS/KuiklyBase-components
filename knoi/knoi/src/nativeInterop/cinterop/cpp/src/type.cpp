@@ -17,7 +17,14 @@ napi_value convertStringToNapiValue(napi_env env, const char *value) {
 }
 
 int toInt(napi_env env, napi_value value) {
-    int32_t result;
+    // JS Number is IEEE-754 double. napi_get_value_int32 can fail to write the
+    // out-param for heap numbers on ArkTS, leaving 0. Read as double then truncate.
+    double number = 0.0;
+    napi_status status = napi_get_value_double(env, value, &number);
+    if (status == napi_ok) {
+        return (int32_t) number;
+    }
+    int32_t result = 0;
     napi_get_value_int32(env, value, &result);
     return result;
 }
@@ -31,7 +38,12 @@ napi_value convertIntToNapiValue(napi_env env, int value) {
 
 
 long toLong(napi_env env, napi_value value) {
-    int64_t result;
+    double number = 0.0;
+    napi_status status = napi_get_value_double(env, value, &number);
+    if (status == napi_ok) {
+        return (int64_t) number;
+    }
+    int64_t result = 0;
     napi_get_value_int64(env, value, &result);
     return result;
 }

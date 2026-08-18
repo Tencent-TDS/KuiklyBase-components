@@ -30,6 +30,11 @@ kotlin {
             kotlin.srcDir("src/main/kotlin")
             resources.srcDirs("src/main/resources", buildDir.absolutePath + "/version/")
         }
+        val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
 
     }
 

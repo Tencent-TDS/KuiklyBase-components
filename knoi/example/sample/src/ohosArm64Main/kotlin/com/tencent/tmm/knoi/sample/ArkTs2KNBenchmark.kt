@@ -356,6 +356,14 @@ fun testArrayReturnArray(array: Array<Any?>): Array<Any?> {
 }
 
 @KNExport
+fun testArrayIntReturnArrayInt(array: Array<Int>): Array<Int> {
+    info("knoi-sample testArrayIntReturnArrayInt ${array.contentToString()}")
+    val asIntArray = array.toIntArray()
+    info("knoi-sample testArrayIntReturnArrayInt toIntArray ${asIntArray.contentToString()}")
+    return Array(asIntArray.size) { index -> asIntArray[index] + 1 }
+}
+
+@KNExport
 @OptIn(ExperimentalForeignApi::class)
 fun testArrayBufferReturnArrayBuffer(buffer: ArrayBuffer): ArrayBuffer {
     info("knoi-sample testArrayBufferReturnArrayBuffer")

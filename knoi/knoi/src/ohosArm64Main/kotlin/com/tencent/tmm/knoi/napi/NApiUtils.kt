@@ -1,5 +1,6 @@
 package com.tencent.tmm.knoi.napi
 
+import com.tencent.tmm.knoi.converter.coerceJsNumber
 import kotlinx.cinterop.cValue
 import kotlinx.cinterop.cstr
 import kotlinx.cinterop.memScoped
@@ -39,13 +40,5 @@ fun defineFunctionToExport(env: napi_env, export: napi_value, properties: String
  * 在已知参数类型 KClass 时，对类型进行转换
  */
 fun safeCaseNumberType(value: Any?, type: KClass<out Any>): Any? {
-    if (value !is Double) {
-        return value
-    }
-    return when (type) {
-        Int::class -> value.toInt()
-        Long::class -> value.toLong()
-        else -> value
-    }
-
+    return coerceJsNumber(value, type)
 }

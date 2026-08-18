@@ -1,6 +1,8 @@
 package com.tencent.tmm.knoi.type
 
 import com.tencent.tmm.knoi.converter.convertJSCallbackInfoToKTParamList
+import com.tencent.tmm.knoi.converter.coerceJsNumber
+import com.tencent.tmm.knoi.converter.getJsArrayLikeLength
 import com.tencent.tmm.knoi.converter.jsValueToKTValue
 import com.tencent.tmm.knoi.converter.ktValueToJSValue
 import com.tencent.tmm.knoi.definder.tsfnRegister
@@ -399,9 +401,10 @@ class JSValue(val env: napi_env?, origin: napi_value?, val tid: Int, val finaliz
         if (isNotAvailable()) return emptyList()
         return tsfnRegister.callSyncSafe(tid) {
             val result = mutableListOf<T>()
-            val length = getArrayLength(getEnv(), handle).toInt()
+            val length = getJsArrayLikeLength(getEnv(), handle)
             for (index in 0 until length) {
-                result.add(jsValueToKTValue(getEnv(), this[index]?.handle, T::class) as T)
+                val converted = jsValueToKTValue(getEnv(), this[index]?.handle, T::class)
+                result.add(coerceJsNumber(converted, T::class) as T)
             }
             return@callSyncSafe result
         }!!

@@ -8,11 +8,14 @@ import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.UNIT
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
 import com.tencent.tmm.knoi.annotation.KNExport
+import com.tencent.tmm.knoi.convert.genNumericCollectionParamAccess
+import com.tencent.tmm.knoi.convert.needsJsNumberCollectionCoerce
 import com.tencent.tmm.knoi.service.parseFunctionInfo
 import com.tencent.tmm.knoi.utils.OPTION_MODULE_NAME
 import com.tencent.tmm.knoi.utils.arrayWithAny
@@ -86,6 +89,13 @@ fun genExportFunctionList(
                 FileSpec.builder(it.function.packageName, "ExportFunction");
         }
         val expandFileSpecBuilder = packageNameToFileSpec[it.function.packageName] ?: return@forEach
+        if (needsJsNumberCollectionCoerce(it.function.parameters)) {
+            expandFileSpecBuilder.addImport(
+                "com.tencent.tmm.knoi.converter",
+                "coerceJsArray",
+                "coerceJsList"
+            )
+        }
         expandFileSpecBuilder.addFunction(genExportFunctionWithArrayAny(it))
         registerFileSpecBuilder.addFunction(genBindFunction(it))
     }
@@ -137,19 +147,24 @@ fun genBindFunction(exportFunction: ExportFunction): FunSpec {
 fun genExportFunctionWithArrayAny(exportFunction: ExportFunction): FunSpec {
     val func = FunSpec.builder(formatFunctionWithAnyName(exportFunction.function.functionName))
     var paramStr = ""
+    val paramTypeArray = mutableListOf<TypeName>()
     exportFunction.function.parameters.forEachIndexed { index, param ->
-        paramStr += "args[${index}] as %T"
+        val coerced = genNumericCollectionParamAccess("args", index, param)
+        if (coerced != null) {
+            paramStr += coerced.first
+            paramTypeArray.addAll(coerced.second)
+        } else {
+            paramStr += "args[${index}] as %T"
+            paramTypeArray.add(param.type.toTypeName())
+        }
         if (index != exportFunction.function.parameters.size - 1) {
             paramStr += ", "
         }
     }
-    val paramTypeArray = exportFunction.function.parameters.map {
-        it.type.toTypeName()
-    }.toTypedArray()
     func.addParameter("args", arrayWithAny).addCode(
         """
                 |return ${exportFunction.function.functionName}(${paramStr})
-                |""".trimMargin(), *paramTypeArray
+                |""".trimMargin(), *paramTypeArray.toTypedArray()
     )
     if (exportFunction.function.returnType != null) {
         func.returns(exportFunction.function.returnType.toTypeName())

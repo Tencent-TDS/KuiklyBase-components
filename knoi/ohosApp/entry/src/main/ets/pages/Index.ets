@@ -145,6 +145,10 @@ struct Index {
               invoke<Array<String>>("testArrayReturnArray", ["ArkTsArray1", "ArkTsArray2"])
             console.log("knoi-sample invoke testArrayReturnArray result " + JSON.stringify(arrayResult));
 
+            let intArrayResult: Array<number> =
+              invoke<Array<number>>("testArrayIntReturnArrayInt", [1, 2, 3, 61])
+            console.log("knoi-sample invoke testArrayIntReturnArrayInt result " + JSON.stringify(intArrayResult));
+
             arrayResult = invoke<Array<String>>("testListReturnList", ["ArkTsArray1", "ArkTsArray2"])
             console.log("knoi-sample invoke testListReturnList result " + JSON.stringify(arrayResult));
 

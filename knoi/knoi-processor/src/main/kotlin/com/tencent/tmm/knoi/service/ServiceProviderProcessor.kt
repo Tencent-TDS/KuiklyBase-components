@@ -18,6 +18,8 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
 import com.tencent.tmm.knoi.annotation.ServiceProvider
+import com.tencent.tmm.knoi.convert.genNumericCollectionParamAccess
+import com.tencent.tmm.knoi.convert.needsJsNumberCollectionCoerce
 import com.tencent.tmm.knoi.function.Param
 import com.tencent.tmm.knoi.utils.isOhosArm64
 import com.tencent.tmm.knoi.utils.OPTION_MODULE_NAME
@@ -86,6 +88,13 @@ fun genServiceProviderList(
 
         serviceProviderFileSpecBuilder.addImport("com.tencent.tmm.knoi.service", "Invokable")
         serviceProviderFileSpecBuilder.addImport("kotlin.reflect", "KClass")
+        if (it.functionList.any { function -> needsJsNumberCollectionCoerce(function.parameters) }) {
+            serviceProviderFileSpecBuilder.addImport(
+                "com.tencent.tmm.knoi.converter",
+                "coerceJsArray",
+                "coerceJsList"
+            )
+        }
         if (isOhosArm64(options)) {
             serviceProviderFileSpecBuilder.addImport("com.tencent.tmm.knoi.type", "JSValue")
         }
@@ -202,9 +211,9 @@ fun genParamsWrapper(index: Int, param: Param): Pair<String, List<TypeName>> {
         """.trimMargin()
         types.add(returnType)
         return Pair(paramWrapperStr, types.toList())
-    } else {
-        return Pair("params[${index}] as %T", listOf(param.type.toTypeName()))
     }
+    genNumericCollectionParamAccess("params", index, param)?.let { return it }
+    return Pair("params[${index}] as %T", listOf(param.type.toTypeName()))
 }
 
 fun genInvokeFuncSpec(serviceInfo: ServiceInfo): FunSpec {
