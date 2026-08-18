@@ -21,6 +21,7 @@ import com.tencent.tmm.knoi.utils.capitalizeName
 import com.tencent.tmm.knoi.utils.checkFunctionSupportType
 import com.tencent.tmm.knoi.utils.isOhosArm64
 import com.tencent.tmm.knoi.utils.jsValueClazzName
+import com.tencent.tmm.knoi.utils.quotedString
 
 fun getJSValueConvertFunc(typeName: TypeName): String {
     return when (typeName) {
@@ -109,12 +110,13 @@ fun genBindProxyFunction(serviceInfo: ServiceInfo): FunSpec {
     val func = FunSpec.builder(getBindProxyFunctionName(serviceInfo.serviceName))
     func.addCode(
         """
-        |bindServiceProxy("${serviceInfo.serviceName}", ${
+        |bindServiceProxy(%L, ${
             getServiceConsumerProxyName(
                 serviceInfo
             )
         }())
-        |""".trimMargin()
+        |""".trimMargin(),
+        quotedString(serviceInfo.serviceName)
     )
     return func.build()
 }
@@ -124,8 +126,9 @@ fun genApiFunction(serviceInfo: ServiceInfo): FunSpec {
     func.returns(serviceInfo.clazzName.toTypeName())
     func.addCode(
         """
-        |return getService("${serviceInfo.serviceName}")
-        |""".trimMargin()
+        |return getService(%L)
+        |""".trimMargin(),
+        quotedString(serviceInfo.serviceName)
     )
     return func.build()
 }
@@ -140,7 +143,7 @@ fun genServiceConsumerProxyClass(serviceInfo: ServiceInfo): TypeSpec {
             genProxyFunctionSpec(
                 it,
                 "callService",
-                "\"${serviceInfo.serviceName}\"",
+                quotedString(serviceInfo.serviceName).toString(),
                 ::genParamWrapper,
                 ::genResultWrapper,
             )

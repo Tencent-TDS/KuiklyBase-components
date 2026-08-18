@@ -109,9 +109,10 @@ fun genAsyncBindFunction(exportFunction: AsyncExportFunction): FunSpec {
     }
     func.addCode(
         """
-        |bindAsync("${exportFunction.registerName}", ::${formatAsyncFunctionWithAnyName(exportFunction.function.functionName)},
+        |bindAsync(%S, ::${formatAsyncFunctionWithAnyName(exportFunction.function.functionName)},
         |   ${formatSupportTypeClassString(exportFunction.function.returnType)}${paramTypeListStr})
-        |""".trimMargin()
+        |""".trimMargin(),
+        exportFunction.registerName
     )
     return func.build()
 }

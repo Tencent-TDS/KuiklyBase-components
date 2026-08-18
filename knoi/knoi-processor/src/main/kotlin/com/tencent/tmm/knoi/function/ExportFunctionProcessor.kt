@@ -127,9 +127,10 @@ fun genBindFunction(exportFunction: ExportFunction): FunSpec {
 
     func.addCode(
         """
-        |bind("${exportFunction.registerName}", ::${formatFunctionWithAnyName(exportFunction.function.functionName)},
+        |bind(%S, ::${formatFunctionWithAnyName(exportFunction.function.functionName)},
         |   ${formatSupportTypeClassString(exportFunction.function.returnType)}${paramTypeListStr})
-        |""".trimMargin()
+        |""".trimMargin(),
+        exportFunction.registerName
     )
     return func.build()
 }

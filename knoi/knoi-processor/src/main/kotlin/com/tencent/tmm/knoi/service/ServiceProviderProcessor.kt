@@ -23,6 +23,8 @@ import com.tencent.tmm.knoi.utils.isOhosArm64
 import com.tencent.tmm.knoi.utils.OPTION_MODULE_NAME
 import com.tencent.tmm.knoi.utils.capitalizeName
 import com.tencent.tmm.knoi.utils.checkFunctionSupportType
+import com.tencent.tmm.knoi.utils.quotedString
+import com.tencent.tmm.knoi.utils.unknownServiceMethodException
 import kotlin.reflect.KClass
 
 fun processServiceProvider(
@@ -116,9 +118,9 @@ fun genRegisterServiceProviderFunction(serviceInfo: ServiceInfo): FunSpec {
     }
     func.addCode(
         """
-        |registerServiceProvider("${serviceInfo.serviceName}",${if (hasBindApi) " %T::class," else ""} ${serviceInfo.singleton}) {
+        |registerServiceProvider(%L,${if (hasBindApi) " %T::class," else ""} ${serviceInfo.singleton}) {
         |  return@registerServiceProvider ${getServiceProviderName(serviceInfo)}()
-        |}""".trimMargin(), *(typeArray.toTypedArray())
+        |}""".trimMargin(), quotedString(serviceInfo.serviceName), *(typeArray.toTypedArray())
     )
     return func.build()
 }
@@ -254,10 +256,12 @@ fun genInvokeFuncSpec(serviceInfo: ServiceInfo): FunSpec {
         |return when (method) {
             ${totalCode}
         |    else -> {
-        |        throw IllegalArgumentException("${serviceInfo.serviceName}#${'$'}method not found.")
+        |        %L
         |    }
         |}
-        |""".trimMargin(), *(allTypeList.toTypedArray())
+        |""".trimMargin(),
+        *(allTypeList.toTypedArray()),
+        unknownServiceMethodException(serviceInfo.serviceName)
     )
     func.returns(ANY.copy(nullable = true))
     return func.build()
@@ -287,10 +291,12 @@ fun genGetParamTypeListFuncSpec(serviceInfo: ServiceInfo): FunSpec {
         |return when (method) {
             $totalCode
         |    else -> {
-        |        throw IllegalArgumentException("${serviceInfo.serviceName}#${'$'}method not found.")
+        |        %L
         |    }
         |}
-        |""".trimMargin(), *(allTypeList.toTypedArray())
+        |""".trimMargin(),
+        *(allTypeList.toTypedArray()),
+        unknownServiceMethodException(serviceInfo.serviceName)
     )
     func.returns(
         Array::class.asClassName().parameterizedBy(
@@ -316,10 +322,12 @@ fun genGetReturnTypeFuncSpec(serviceInfo: ServiceInfo): FunSpec {
         |return when (method) {
             $returnTypeStr
         |    else -> {
-        |        throw IllegalArgumentException("${serviceInfo.serviceName}#${'$'}method not found.")
+        |        %L
         |    }
         |}
-        |""".trimMargin(), *(returnTypeList.toTypedArray())
+        |""".trimMargin(),
+        *(returnTypeList.toTypedArray()),
+        unknownServiceMethodException(serviceInfo.serviceName)
     )
     func.returns(KClass::class.asClassName().parameterizedBy(WildcardTypeName.producerOf(ANY)))
     return func.build()

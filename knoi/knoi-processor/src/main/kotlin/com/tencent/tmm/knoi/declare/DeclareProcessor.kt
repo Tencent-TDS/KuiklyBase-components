@@ -106,10 +106,11 @@ fun genRegisterDeclareFunction(declare: Declare): FunSpec {
     val func = FunSpec.builder(formatDeclareFieldName(declare))
     func.addCode(
         """
-        |registerDeclare("${declare.getDeclareName()}") {
+        |registerDeclare(%S) {
         |    ${declare.getShoreDeclareName()}
         |}
-        |""".trimMargin()
+        |""".trimMargin(),
+        declare.getDeclareName()
     )
     return func.build()
 }
