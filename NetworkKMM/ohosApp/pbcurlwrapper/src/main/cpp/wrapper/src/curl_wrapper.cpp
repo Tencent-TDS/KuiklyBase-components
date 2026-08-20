@@ -19,6 +19,7 @@
 #include <string>
 #include "curl/curl.h"
 #include "log/curl_log.h"
+#include "utils/curl_header_list.h"
 #include "utils/curl_utils.h"
 #include "zlib.h"
 
@@ -191,26 +192,15 @@ class CurlClient {
         logI(log_tag_, "libcurl ver:" + curlVer + ", request url:" + url + ", header size:" + std::to_string(size)
             + ", timeout:" + std::to_string(timeout));
 
-        // 拼接 Header
-        for (int i = 0; i < size; i++) {
-            StringPair header = headers->stringPairs[i];
-            std::string key = std::string(header.first);
-            std::string tmpKey = key;
-            std::string value = std::string(header.second);
-            // 比较时转换为小写（避免大小写敏感问题）
-            std::transform(tmpKey.begin(), tmpKey.end(), tmpKey.begin(), ::tolower);
-            if (tmpKey == "accept-encoding" && value == "gzip") {
-                gzip_accept_encoding_ = true;
-            }
-            std::string header_opt = key + ": " + value;
-            logI(log_tag_, "request header[" + std::to_string(i) + "]: " + header_opt);
-            header_list_ = curl_slist_append(header_list_, header_opt.c_str());
-            if (header_list_ == nullptr) {
-                header_list_ = curl_slist_append(header_list_, header_opt.c_str());
-            } else {
-                curl_slist_append(header_list_, header_opt.c_str());
-            }
-        }
+        // 拼接 Header: each request header is appended to the slist exactly once.
+        const std::vector<std::string> header_lines =
+            BuildCurlRequestHeaderLines(headers, &gzip_accept_encoding_);
+        header_list_ = AppendCurlHeaderLinesOnce(
+            header_list_, header_lines,
+            [this](struct curl_slist *list, const char *header_opt, int index) {
+                logI(log_tag_, "request header[" + std::to_string(index) + "]: " + header_opt);
+                return curl_slist_append(list, header_opt);
+            });
 
         // url
         curl_easy_setopt(curl_, CURLOPT_URL, url);
