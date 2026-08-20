@@ -16,6 +16,7 @@
  */
 
 #include "curl_wrapper.h"
+#include "curl_post_options.h"
 #include <string>
 #include "curl/curl.h"
 #include "log/curl_log.h"
@@ -186,10 +187,11 @@ class CurlClient {
         int64_t timeout = request.timeout;
         StringDic *headers = request.headers;
         int size = headers->size;
+        int method = request.method;
         int postBodyLen = request.postBodyLen;
         const char *postBody = request.postBody;
         logI(log_tag_, "libcurl ver:" + curlVer + ", request url:" + url + ", header size:" + std::to_string(size)
-            + ", timeout:" + std::to_string(timeout));
+            + ", timeout:" + std::to_string(timeout) + ", method:" + std::to_string(method));
 
         // 拼接 Header
         for (int i = 0; i < size; i++) {
@@ -247,21 +249,27 @@ class CurlClient {
         curl_easy_setopt(curl_, CURLOPT_XFERINFODATA, this);
         curl_easy_setopt(curl_, CURLOPT_NOPROGRESS, 0L);
 
-        // 根据post body长度是否大于0, 判断是否是post请求
-        if (postBodyLen > 0 && postBody != nullptr) {
-            logI(log_tag_, "curl post request, body len:" + std::to_string(postBodyLen) + ", body:" + postBody);
-            // size of the POST input data
-            curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, postBodyLen);
+        // Honor request.method (POST) even when the body is empty/null. A non-empty
+        // body still forces POST for legacy callers that never set method.
+        CurlPostOptions postOpts = ResolveCurlPostOptions(method, postBodyLen, postBody);
+        if (postOpts.usePost) {
+            const char *bodyForLog = postOpts.postFields != nullptr ? postOpts.postFields : "";
+            logI(log_tag_, "curl post request, body len:" + std::to_string(postOpts.postFieldSize)
+                + ", body:" + bodyForLog);
             curl_easy_setopt(curl_, CURLOPT_POST, 1L);
-            if (postBodyLen >= 8 * 1024 * 1024) {
+            curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, postOpts.postFieldSize);
+            if (postOpts.bodyMode == CURL_POST_BODY_POINTER) {
                 logI(log_tag_, "Enter above 8MB branch.");
                 // 传 body 指针，不会拷贝数据，因此必须确保 perform 之前数据有效
-                curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, postBody);
-            } else {
+                curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, postOpts.postFields);
+            } else if (postOpts.bodyMode == CURL_POST_BODY_COPY) {
                 logI(log_tag_, "Enter libcurl below 8MB branch.");
                 // 7.17.1 以上 libcurl 版本支持，最大不能超过 8MB 数据
                 // 传 body 指针，会拷贝数据，因此必须先设置 body 大小，否则按空字符串处理
-                curl_easy_setopt(curl_, CURLOPT_COPYPOSTFIELDS, postBody);
+                curl_easy_setopt(curl_, CURLOPT_COPYPOSTFIELDS, postOpts.postFields);
+            } else {
+                // 空 POST：POSTFIELDS 指向空串 + POSTFIELDSIZE=0，避免 libcurl 走 GET
+                curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, postOpts.postFields);
             }
         }
 

@@ -40,6 +40,7 @@ import com.tencent.kmm.network.export.VBTransportContentType
 import com.tencent.kmm.network.export.VBTransportElapseStatistics
 import com.tencent.kmm.network.export.VBTransportGetRequest
 import com.tencent.kmm.network.export.VBTransportGetResponse
+import com.tencent.kmm.network.export.VBTransportMethod
 import com.tencent.kmm.network.export.VBTransportPostRequest
 import com.tencent.kmm.network.export.VBTransportPostResponse
 import com.tencent.kmm.network.export.VBTransportStringRequest
@@ -79,6 +80,15 @@ private const val CURL_LOG_LEVEL_DEBUG = 0
 private const val CURL_LOG_LEVEL_INFO = 1
 private const val CURL_LOG_LEVEL_WARN = 2
 private const val CURL_LOG_LEVEL_ERROR = 3
+
+// Maps KMM request types to CurlRequest.method (VBTransportMethod ordinal).
+// Post/Bytes are POST even when the body is empty; Get/String stay GET.
+internal fun curlHttpMethodOf(request: VBTransportBaseRequest): Int {
+    return when (request) {
+        is VBTransportPostRequest, is VBTransportBytesRequest -> VBTransportMethod.POST.ordinal
+        else -> VBTransportMethod.GET.ordinal
+    }
+}
 
 fun curlLogImpl(level: Int, tag: CPointer<ByteVar>?, content: CPointer<ByteVar>?): Int {
     when (level) {
@@ -156,6 +166,14 @@ object CurlRequestServiceHM : ICurlRequestService {
             this.headers = headers.ptr
             this.timeout = request.totalTimeout
             this.postBodyLen = 0
+            // Native curl used to infer POST from a non-empty body, which turned
+            // empty-body post() into GET. Always pass VBTransportMethod.
+            val httpMethod = curlHttpMethodOf(request)
+            this.method = httpMethod
+            if (httpMethod == VBTransportMethod.POST.ordinal) {
+                // Empty POST still needs a body pointer so native can set POSTFIELDS=""
+                this.postBody = toCSTR("", memScope)
+            }
             if (request is VBTransportPostRequest && request.isDataInitialize()) {
                 if (request.data is ByteArray) {
                     val byteData = (request.data as ByteArray)

@@ -64,6 +64,7 @@ typedef struct {
     const char *url;
     StringDic *headers;
     int64_t timeout;  // 单位 ms
+    int method;       // 0: GET, 1: POST (VBTransportMethod). Empty-body POST must still be POST.
     int postBodyLen;
     const char *postBody;
 } CurlRequest;
