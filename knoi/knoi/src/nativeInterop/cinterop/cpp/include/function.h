@@ -24,6 +24,19 @@ createThreadSafeFunctionWithSync(napi_env env, const char *workName);
 void*
 callThreadSafeFunction(napi_threadsafe_function tsfn, void* callback, void* data, bool sync, int tsfnOriginTid);
 
+void releaseThreadSafeFunction(napi_threadsafe_function tsfn);
+
+void registerThreadSafeFunction(napi_env env, int tid);
+
+void unregisterThreadSafeFunction(int tid);
+
+int isThreadSafeFunctionRegistered(int tid);
+
+int tryCallThreadSafeFunction(int tid, void *callback, void *data, bool sync, int tsfnOriginTid,
+                              void **outResult);
+
+void setThreadSafeFunctionEnvDestroyedCallback(void (*cb)(int tid));
+
 #ifdef __cplusplus
 }
 #endif

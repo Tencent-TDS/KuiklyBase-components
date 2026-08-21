@@ -27,6 +27,8 @@ add_library(${TARGET_NAME} STATIC
         include/array.h
         include/function.h
         src/function.cpp
+        include/thread_safe_function_registry.h
+        src/thread_safe_function_registry.cpp
         include/reference.h
         src/reference.cpp
         include/object.h

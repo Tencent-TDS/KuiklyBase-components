@@ -16,6 +16,8 @@ export declare function init(): void;
 
 export declare function setup(soName: string, debug: boolean): void;
 
+export declare function destroy(): void;
+
 export declare function create_function_waiter(): number;
 
 export declare function notify_function_waiter(id: number, result: string, length: number): void;

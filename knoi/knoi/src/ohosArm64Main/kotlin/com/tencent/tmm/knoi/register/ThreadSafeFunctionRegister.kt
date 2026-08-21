@@ -4,35 +4,47 @@ package com.tencent.tmm.knoi.register
 import com.tencent.tmm.knoi.getEnv
 import com.tencent.tmm.knoi.logger.debug
 import kotlinx.atomicfu.locks.SynchronizedObject
-import kotlinx.atomicfu.locks.synchronized
 import kotlinx.cinterop.COpaquePointer
+import kotlinx.cinterop.COpaquePointerVar
 import kotlinx.cinterop.StableRef
+import kotlinx.cinterop.alloc
 import kotlinx.cinterop.asStableRef
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
 import kotlinx.cinterop.staticCFunction
-import platform.ohos.knoi.callThreadSafeFunction
-import platform.ohos.knoi.createThreadSafeFunctionWithSync
-import platform.ohos.knoi.get_pid
+import kotlinx.cinterop.value
+import platform.ohos.knoi.isThreadSafeFunctionRegistered
+import platform.ohos.knoi.registerThreadSafeFunction
+import platform.ohos.knoi.tryCallThreadSafeFunction
+import platform.ohos.knoi.unregisterThreadSafeFunction as nativeUnregisterThreadSafeFunction
 import platform.ohos.knoi.get_tid
-import platform.ohos.napi_threadsafe_function
 
 class ThreadSafeFunctionRegister : SynchronizedObject() {
-
-    private val tidToThreadSafeFunctionMap = mutableMapOf<Int, napi_threadsafe_function?>()
 
     /**
      * 注册 Thread Safe Function
      */
     fun registerThreadSafeFunctionIfNeed() {
+        val env = getEnv() ?: return
         val tid = get_tid()
-        synchronized(this) {
-            if (tidToThreadSafeFunctionMap.containsKey(tid)) {
-                return
-            } else {
-                tidToThreadSafeFunctionMap[tid] =
-                    createThreadSafeFunctionWithSync(getEnv(), "tsfn-worker")
-                debug("register thread safe function success. tid = ${get_tid()}")
-            }
-        }
+        registerThreadSafeFunction(env, tid)
+        debug("register thread safe function success. tid = $tid")
+    }
+
+    /**
+     * 释放 tid 对应的 Thread Safe Function。
+     * Worker / napi_env 销毁时必须调用，否则 Kotlin Cleaner 会向已销毁的 uv loop 投递任务。
+     */
+    fun unregisterThreadSafeFunction(tid: Int = get_tid()) {
+        nativeUnregisterThreadSafeFunction(tid)
+        debug("unregister thread safe function. tid = $tid")
+    }
+
+    /**
+     * tid 是否仍持有可用的 Thread Safe Function
+     */
+    fun isRegistered(tid: Int): Boolean {
+        return isThreadSafeFunctionRegistered(tid) != 0
     }
 
     /**
@@ -40,20 +52,29 @@ class ThreadSafeFunctionRegister : SynchronizedObject() {
      * @param tid 线程 ID
      * @param sync 是否同步调用
      * @param block 待执行的闭包
-     * @return 返回值
+     * @return 返回值，未注册或已释放时返回 null
      */
     fun callFunctionInOtherThread(
         tid: Int,
         sync: Boolean,
         block: () -> COpaquePointer?
     ): COpaquePointer? {
-        val tsfn: napi_threadsafe_function = tidToThreadSafeFunctionMap[tid]
-            ?: throw RuntimeException("thread safe function not register.")
-
+        if (!isRegistered(tid)) {
+            return null
+        }
         val ref = StableRef.create(block)
-        return callThreadSafeFunction(
-            tsfn, staticCFunction(::callbackInJSThread), ref.asCPointer(), sync, tid
-        )
+        return memScoped {
+            val outResult = alloc<COpaquePointerVar>()
+            outResult.value = null
+            val submitted = tryCallThreadSafeFunction(
+                tid, staticCFunction(::callbackInJSThread), ref.asCPointer(), sync, tid, outResult.ptr
+            )
+            if (submitted == 0) {
+                ref.dispose()
+                return@memScoped null
+            }
+            outResult.value
+        }
     }
 
     /**
@@ -66,17 +87,19 @@ class ThreadSafeFunctionRegister : SynchronizedObject() {
     ): R? {
         if (get_tid() == tid) {
             return block.invoke()
-        } else {
-            val ptr = callFunctionInOtherThread(tid, true) {
-                val result = block.invoke() ?: return@callFunctionInOtherThread null
-                val ref = StableRef.create(result)
-                ref.asCPointer()
-            }
-            val ref = ptr?.asStableRef<R>() ?: return null
-            val result = ref.get()
-            ref.dispose()
-            return result
         }
+        if (!isRegistered(tid)) {
+            return null
+        }
+        val ptr = callFunctionInOtherThread(tid, true) {
+            val result = block.invoke() ?: return@callFunctionInOtherThread null
+            val ref = StableRef.create(result)
+            ref.asCPointer()
+        }
+        val ref = ptr?.asStableRef<R>() ?: return null
+        val result = ref.get()
+        ref.dispose()
+        return result
     }
 
     /**
@@ -89,11 +112,13 @@ class ThreadSafeFunctionRegister : SynchronizedObject() {
     ) {
         if (get_tid() == tid) {
             return block.invoke()
-        } else {
-            callFunctionInOtherThread(tid, false) {
-                block.invoke()
-                return@callFunctionInOtherThread null
-            }
+        }
+        if (!isRegistered(tid)) {
+            return
+        }
+        callFunctionInOtherThread(tid, false) {
+            block.invoke()
+            return@callFunctionInOtherThread null
         }
     }
 

@@ -1,4 +1,4 @@
-import { init, setup } from "libknoi.so"
+import { destroy, init, setup } from "libknoi.so"
 
 export function invoke<R>(method: string, ...params: any[]): R {
   Environment.get().initIfNeed()
@@ -42,6 +42,10 @@ export function getDeclare<R>(name: string): R {
 
 export function initEnvironment() {
   Environment.get().initIfNeed()
+}
+
+export function destroyEnvironment() {
+  destroy()
 }
 
 class Environment {

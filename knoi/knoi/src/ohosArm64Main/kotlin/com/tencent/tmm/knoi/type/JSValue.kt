@@ -84,6 +84,10 @@ class JSValue(val env: napi_env?, origin: napi_value?, val tid: Int, val finaliz
                 }, Random.nextLong(2000, 10_000))
             }
         } else {
+            // Worker 已被回收时 TSFN 已释放，不能再向死 uv handle 投递任务
+            if (!tsfnRegister.isRegistered(it.tid)) {
+                return@createCleaner
+            }
             // 在非主线程切换至该线程，进行清理操作
             tsfnRegister.callAsyncSafe(it.tid) {
                 deleteReference(getEnv(), it.ref)

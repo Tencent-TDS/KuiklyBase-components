@@ -22,6 +22,7 @@
 
 void (*initEnvFuncPtr)(napi_env, napi_value, bool) = nullptr;
 void (*initBridgeFuncPtr)() = nullptr;
+void (*destroyEnvFuncPtr)() = nullptr;
 char *name = nullptr;
 bool debug = false;
 std::atomic<bool> hasInitBridge(false);
@@ -44,6 +45,7 @@ static napi_value setup(napi_env env, napi_callback_info info) {
         initEnvFuncPtr =
             reinterpret_cast<void (*)(napi_env, napi_value, bool)>(dlsym(handle, "com_tencent_tmm_knoi_initEnv"));
         initBridgeFuncPtr = reinterpret_cast<void (*)()>(dlsym(handle, "com_tencent_tmm_knoi_initBridge"));
+        destroyEnvFuncPtr = reinterpret_cast<void (*)()>(dlsym(handle, "com_tencent_tmm_knoi_destroyEnv"));
         if (initBridgeFuncPtr == nullptr) {
             napi_throw_error(env, NULL, "can not found com_tencent_tmm_knoi_initBridge symbol, please check it.");
             return nullptr;
@@ -72,11 +74,21 @@ static napi_value init(napi_env env, napi_callback_info info) {
     return nullptr;
 }
 
+static napi_value destroy(napi_env env, napi_callback_info info) {
+    (void)env;
+    (void)info;
+    if (destroyEnvFuncPtr != nullptr) {
+        destroyEnvFuncPtr();
+    }
+    return nullptr;
+}
+
 EXTERN_C_START
 static napi_value Init(napi_env env, napi_value exports) {
     napi_property_descriptor desc[] = {
         {"setup", nullptr, setup, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"init", nullptr, init, nullptr, nullptr, nullptr, napi_default, nullptr},
+        {"destroy", nullptr, destroy, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"create_function_waiter", nullptr, create_function_waiter, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"wait_on_function_waiter", nullptr, wait_on_function_waiter, nullptr, nullptr, nullptr, napi_default, nullptr},
         {"notify_function_waiter", nullptr, notify_function_waiter, nullptr, nullptr, nullptr, napi_default, nullptr}};

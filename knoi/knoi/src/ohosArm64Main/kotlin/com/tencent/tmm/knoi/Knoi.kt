@@ -9,8 +9,11 @@ import com.tencent.tmm.knoi.jsbind.registerBindJSFunction
 import com.tencent.tmm.knoi.logger.isDebug
 import com.tencent.tmm.knoi.metric.initTraceFuncIfNeed
 import com.tencent.tmm.knoi.metric.trace
+import kotlinx.cinterop.CName
+import kotlinx.cinterop.staticCFunction
 import platform.ohos.knoi.get_pid
 import platform.ohos.knoi.get_tid
+import platform.ohos.knoi.setThreadSafeFunctionEnvDestroyedCallback
 import platform.ohos.napi_env
 import platform.ohos.napi_value
 import kotlin.native.concurrent.ThreadLocal
@@ -57,10 +60,37 @@ fun InitEnv(env: napi_env, export: napi_value, debug: Boolean) {
 
 internal fun injectEnv(env: napi_env?) {
     tlsEnv = env
+    ensureTsfnEnvDestroyedCallback()
     tsfnRegister.registerThreadSafeFunctionIfNeed()
 }
 
 fun getEnv(): napi_env? = tlsEnv
+
+private var tsfnEnvDestroyedCallbackReady = false
+
+private fun ensureTsfnEnvDestroyedCallback() {
+    if (tsfnEnvDestroyedCallbackReady) {
+        return
+    }
+    tsfnEnvDestroyedCallbackReady = true
+    setThreadSafeFunctionEnvDestroyedCallback(staticCFunction(::onTsfnEnvDestroyed))
+}
+
+internal fun onTsfnEnvDestroyed(tid: Int) {
+    if (get_tid() == tid) {
+        tlsEnv = null
+    }
+}
+
+/**
+ * 释放当前线程的 ThreadSafeFunction，并清空 tls napi_env。
+ * Worker / napi_env 销毁时应调用；未显式调用时由 env cleanup hook 自动释放。
+ */
+@CName("com_tencent_tmm_knoi_destroyEnv")
+fun DestroyEnv() {
+    tsfnRegister.unregisterThreadSafeFunction()
+    tlsEnv = null
+}
 
 internal fun setCurrentAsyncInvokeOwnerTid(tid: Int?) {
     tlsAsyncInvokeOwnerTid = tid

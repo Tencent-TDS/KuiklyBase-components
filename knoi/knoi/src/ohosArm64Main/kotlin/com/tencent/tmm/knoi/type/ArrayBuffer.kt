@@ -56,6 +56,10 @@ class ArrayBuffer private constructor(
     private val jsClean = createCleaner(jsReference) {
         val ref = it.ref ?: return@createCleaner
         val tid = it.tid ?: return@createCleaner
+        if (!tsfnRegister.isRegistered(tid)) {
+            it.ref = null
+            return@createCleaner
+        }
         tsfnRegister.callAsyncSafe(tid) {
             deleteReference(getEnv(), ref)
         }

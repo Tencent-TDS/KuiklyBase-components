@@ -5,6 +5,7 @@
 // napi Function C Api
 //
 #include "function.h"
+#include "thread_safe_function_registry.h"
 #include <unistd.h>
 #include <future>
 #include "hilog/log.h"
@@ -75,39 +76,150 @@ createThreadSafeFunctionWithSync(napi_env env, const char *workName) {
     return tsfn;
 }
 
+static napi_status
+submitThreadSafeFunction(napi_threadsafe_function tsfn, CallbackData *callbackData, int tsfnOriginTid) {
+    napi_status acquireStatus = napi_acquire_threadsafe_function(tsfn);
+    if (acquireStatus != napi_ok) {
+        return acquireStatus;
+    }
+    auto mainTid = getpid();
+    napi_status status;
+    if (tsfnOriginTid == mainTid) {
+        status = napi_call_threadsafe_function_with_priority(tsfn, callbackData, napi_priority_high, true);
+    } else {
+        status = napi_call_threadsafe_function(tsfn, reinterpret_cast<void *>(callbackData), napi_tsfn_blocking);
+    }
+    if (status != napi_ok) {
+        napi_release_threadsafe_function(tsfn, napi_tsfn_release);
+    }
+    return status;
+}
+
+static void *waitThreadSafeFunctionResult(CallbackData *callbackData, int tsfnOriginTid) {
+    auto future = callbackData->result.get_future();
+#ifdef DEBUG
+    auto mainTid = getpid();
+    if (tsfnOriginTid == mainTid) {
+        return future.get();
+    } else {
+        auto state = future.wait_for(std::chrono::seconds(kThreadSafeFunctionMaxTimeoutSeconds));
+        if (state == std::future_status::ready) {
+            return future.get();
+        } else {
+            OH_LOG_Print(LogType::LOG_APP, LOG_INFO, 1u, "knoi", "thread safe function timeout.");
+            abort();
+        }
+    }
+#else
+    (void) tsfnOriginTid;
+    return future.get();
+#endif
+}
+
 void *
 callThreadSafeFunction(napi_threadsafe_function tsfn, void *callback, void *data, bool sync, int tsfnOriginTid) {
-    napi_acquire_threadsafe_function(tsfn);
     auto *callbackData = new CallbackData{
             .data = data,
             .callback = callback,
             .result = {},
             .sync = sync
     };
-    auto mainTid = getpid();
-    if (tsfnOriginTid == mainTid) {
-        napi_call_threadsafe_function_with_priority(tsfn, callbackData, napi_priority_high, true);
-    } else {
-        napi_call_threadsafe_function(tsfn, reinterpret_cast<void *>(callbackData), napi_tsfn_blocking);
-    }
-    if (sync) {
-        auto future = callbackData->result.get_future();
-#ifdef DEBUG
-        if (tsfnOriginTid == mainTid) {
-            return future.get();
-        } else {
-            auto state = future.wait_for(std::chrono::seconds(kThreadSafeFunctionMaxTimeoutSeconds));
-            if (state == std::future_status::ready) {
-                return future.get();
-            } else {
-                OH_LOG_Print(LogType::LOG_APP, LOG_INFO, 1u, "knoi", "thread safe function timeout.");
-                abort();
-            }
-        }
-#else
-        return future.get();
-#endif
-    } else {
+    napi_status status = submitThreadSafeFunction(tsfn, callbackData, tsfnOriginTid);
+    if (status != napi_ok) {
+        delete callbackData;
         return nullptr;
     }
+    if (sync) {
+        return waitThreadSafeFunctionResult(callbackData, tsfnOriginTid);
+    }
+    return nullptr;
+}
+
+void releaseThreadSafeFunction(napi_threadsafe_function tsfn) {
+    if (tsfn == nullptr) {
+        return;
+    }
+    napi_release_threadsafe_function(tsfn, napi_tsfn_abort);
+}
+
+static knoi_tsfn_t DefaultCreateTsfn(knoi_env_t env, const char *workName) {
+    return createThreadSafeFunctionWithSync(static_cast<napi_env>(env), workName);
+}
+
+static void DefaultReleaseTsfn(knoi_tsfn_t tsfn, int abort) {
+    if (tsfn == nullptr) {
+        return;
+    }
+    napi_release_threadsafe_function(
+            static_cast<napi_threadsafe_function>(tsfn),
+            abort ? napi_tsfn_abort : napi_tsfn_release);
+}
+
+static int DefaultAddEnvCleanupHook(knoi_env_t env, void (*fun)(void *), void *arg) {
+    return napi_add_env_cleanup_hook(static_cast<napi_env>(env), fun, arg);
+}
+
+static int DefaultRemoveEnvCleanupHook(knoi_env_t env, void (*fun)(void *), void *arg) {
+    return napi_remove_env_cleanup_hook(static_cast<napi_env>(env), fun, arg);
+}
+
+static int DefaultCallTsfn(knoi_tsfn_t tsfn, void *callback, void *data, int sync, int origin_tid,
+                           void **out_result) {
+    auto *callbackData = new CallbackData{
+            .data = data,
+            .callback = callback,
+            .result = {},
+            .sync = sync != 0
+    };
+    napi_status status = submitThreadSafeFunction(
+            static_cast<napi_threadsafe_function>(tsfn), callbackData, origin_tid);
+    if (status != napi_ok) {
+        delete callbackData;
+        return 0;
+    }
+    if (sync != 0) {
+        void *value = waitThreadSafeFunctionResult(callbackData, origin_tid);
+        if (out_result != nullptr) {
+            *out_result = value;
+        }
+    } else if (out_result != nullptr) {
+        *out_result = nullptr;
+    }
+    return 1;
+}
+
+static void InitTsfnRegistryOps() {
+    KnoiTsfnNapiOps ops{};
+    ops.create = DefaultCreateTsfn;
+    ops.release = DefaultReleaseTsfn;
+    ops.add_env_cleanup_hook = DefaultAddEnvCleanupHook;
+    ops.remove_env_cleanup_hook = DefaultRemoveEnvCleanupHook;
+    ops.call = DefaultCallTsfn;
+    knoi_tsfn_set_ops(&ops);
+}
+
+__attribute__((constructor))
+static void AutoInitTsfnRegistryOps() {
+    InitTsfnRegistryOps();
+}
+
+void registerThreadSafeFunction(napi_env env, int tid) {
+    knoi_tsfn_register(env, tid);
+}
+
+void unregisterThreadSafeFunction(int tid) {
+    knoi_tsfn_unregister(tid);
+}
+
+int isThreadSafeFunctionRegistered(int tid) {
+    return knoi_tsfn_is_registered(tid);
+}
+
+int tryCallThreadSafeFunction(int tid, void *callback, void *data, bool sync, int tsfnOriginTid,
+                              void **outResult) {
+    return knoi_tsfn_try_call(tid, callback, data, sync ? 1 : 0, tsfnOriginTid, outResult);
+}
+
+void setThreadSafeFunctionEnvDestroyedCallback(void (*cb)(int tid)) {
+    knoi_tsfn_set_env_destroyed_callback(cb);
 }
