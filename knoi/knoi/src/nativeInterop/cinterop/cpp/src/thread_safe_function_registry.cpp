@@ -26,7 +26,7 @@ std::unordered_map<int, TsfnEntry> g_tid_to_tsfn;
 KnoiTsfnNapiOps g_ops{};
 knoi_tsfn_env_destroyed_cb g_env_destroyed_cb = nullptr;
 
-int unregister_locked(int tid, bool from_hook, TsfnEntry *out_entry) {
+int unregister_locked(int tid, TsfnEntry *out_entry) {
     auto it = g_tid_to_tsfn.find(tid);
     if (it == g_tid_to_tsfn.end()) {
         return 0;
@@ -34,7 +34,6 @@ int unregister_locked(int tid, bool from_hook, TsfnEntry *out_entry) {
     if (out_entry != nullptr) {
         *out_entry = it->second;
     }
-    (void) from_hook;
     g_tid_to_tsfn.erase(it);
     return 1;
 }
@@ -117,7 +116,7 @@ int knoi_tsfn_unregister(int tid) {
     TsfnEntry entry;
     {
         std::lock_guard<std::mutex> lock(g_mutex);
-        if (!unregister_locked(tid, false, &entry)) {
+        if (!unregister_locked(tid, &entry)) {
             return 0;
         }
     }
@@ -176,7 +175,7 @@ void knoi_tsfn_on_env_cleanup(void *arg) {
     TsfnEntry entry;
     {
         std::lock_guard<std::mutex> lock(g_mutex);
-        if (!unregister_locked(tid, true, &entry)) {
+        if (!unregister_locked(tid, &entry)) {
             return;
         }
     }

@@ -1,4 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
+# Prefer g++ so the host test does not pick clang against a missing libstdc++.
+if(NOT CMAKE_CXX_COMPILER)
+    find_program(KNOI_HOST_GXX g++)
+    if(KNOI_HOST_GXX)
+        set(CMAKE_CXX_COMPILER "${KNOI_HOST_GXX}" CACHE FILEPATH "C++ compiler" FORCE)
+    endif()
+endif()
 project(knoi_tsfn_registry_test LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
